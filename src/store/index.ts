@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { eventBus } from '@/lib/eventBus'
 import { mapStatusToVisual } from '@/lib/visualStateMapper'
 import type {
@@ -37,7 +38,7 @@ interface TaskStore {
   getTask:            (taskId: string) => Task | undefined
 }
 
-export const useTaskStore = create<TaskStore>((set, get) => ({
+export const useTaskStore = create<TaskStore>()(persist((set, get) => ({
   tasks: MOCK_TASKS,
   stats: computeStats(MOCK_TASKS),
 
@@ -174,6 +175,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   getTask: (taskId) => get().tasks.find(t => t.id === taskId),
+}), {
+  name: 'ai-digital-office-tasks',
+  partialize: state => ({ tasks: state.tasks, stats: state.stats }),
 }))
 
 // ── 2. PROJECT STORE ─────────────────────────────────────────────
@@ -183,9 +187,12 @@ interface ProjectStore {
   addProject: (project: Project) => void
 }
 
-export const useProjectStore = create<ProjectStore>(set => ({
+export const useProjectStore = create<ProjectStore>()(persist(set => ({
   projects: [MOCK_PROJECT, MOCK_DIGITAL_OFFICE_PROJECT, MOCK_BITLOCKER_PROJECT],
   addProject: (project) => set(state => ({ projects: [...state.projects, project] })),
+}), {
+  name: 'ai-digital-office-projects',
+  partialize: state => ({ projects: state.projects }),
 }))
 
 // ── 3. EVENT STORE (subscribes to eventBus) ───────────────────────
@@ -274,7 +281,7 @@ interface PrefsStore {
   setDefaultView:   (view: UserPrefs['defaultView']) => void
 }
 
-export const usePrefsStore = create<PrefsStore>(set => ({
+export const usePrefsStore = create<PrefsStore>()(persist(set => ({
   prefs: DEFAULT_USER_PREFS,
 
   setActiveProject: (projectId) => set(state => ({
@@ -296,6 +303,9 @@ export const usePrefsStore = create<PrefsStore>(set => ({
   setDefaultView: (view) => set(state => ({
     prefs: { ...state.prefs, defaultView: view },
   })),
+}), {
+  name: 'ai-digital-office-prefs',
+  partialize: state => ({ prefs: state.prefs }),
 }))
 
 // ── 5. CHAT STORE ─────────────────────────────────────────────────
