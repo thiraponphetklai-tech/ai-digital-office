@@ -1,0 +1,7 @@
+Task ID,Task Name,Description,Owner,Team,Status,Priority,Progress,Due Date,Blocker
+PLAN-001,รวบรวมความต้องการ,ประชุมและรวบรวม requirement จากผู้ใช้งาน,manager,Product,DONE,HIGH,100,2026-09-02,
+PLAN-002,ออกแบบ Solution,จัดทำ solution design และเสนออนุมัติ,architect,Engineering,IN_PROGRESS,HIGH,65,2026-09-09,
+PLAN-003,พัฒนา Integration,เชื่อมต่อระบบภายนอกและทดสอบ API,developer,Engineering,AT_RISK,CRITICAL,35,2026-09-12,รอ API specification จาก Vendor
+PLAN-004,ทดสอบ UAT,จัดเตรียม test case และให้ผู้ใช้งานทดสอบ,tester,QA,TODO,HIGH,0,2026-09-19,
+PLAN-005,จัดทำคู่มือและอบรม,จัดทำคู่มือใช้งานและกำหนดวันอบรม,trainer,Support,TODO,MEDIUM,0,2026-09-24,
+PLAN-006,เตรียม Go-live,ตรวจสอบ checklist และแผน rollback,manager,Operations,BLOCKED,CRITICAL,20,2026-09-30,รออนุมัติวัน Go-live

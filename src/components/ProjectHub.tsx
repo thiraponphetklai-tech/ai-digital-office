@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react'
 import { useProjectStore, useTaskStore, usePrefsStore } from '@/store'
 import type { Project } from '@/types'
+import { CsvProjectImporter } from '@/components/CsvProjectImporter'
 
 interface ProjectHubProps {
   onOpenWorkspace: () => void
@@ -20,6 +21,7 @@ export function ProjectHub({ onOpenWorkspace }: ProjectHubProps) {
   const { tasks } = useTaskStore()
   const { prefs, setActiveProject } = usePrefsStore()
   const [showSetup, setShowSetup] = useState(false)
+  const [showCsvImporter, setShowCsvImporter] = useState(false)
   const [query, setQuery] = useState('')
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
@@ -65,7 +67,7 @@ export function ProjectHub({ onOpenWorkspace }: ProjectHubProps) {
             <div style={{ fontSize: 11, color: '#667085' }}>AI Project Management Platform</div>
           </div>
         </div>
-        <button onClick={() => setShowSetup(true)} style={primaryButtonStyle}>+ Create Project</button>
+        <div style={{ display: 'flex', gap: 8 }}><button onClick={() => setShowCsvImporter(true)} style={secondaryButtonStyle}>⇧ Import CSV Plan</button><button onClick={() => setShowSetup(true)} style={primaryButtonStyle}>+ Create Project</button></div>
       </header>
 
       <section style={{ maxWidth: 1100, margin: '0 auto' }}>
@@ -101,9 +103,11 @@ export function ProjectHub({ onOpenWorkspace }: ProjectHubProps) {
             )
           })}
 
-          <button onClick={() => setShowSetup(true)} style={{ minHeight: 260, border: '2px dashed #C7D2FE', borderRadius: 16, background: '#F8FAFF', color: '#4F46E5', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>+ Create a new project</button>
+          <button onClick={() => setShowCsvImporter(true)} style={{ minHeight: 260, border: '2px dashed #C7D2FE', borderRadius: 16, background: '#F8FAFF', color: '#4F46E5', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>⇧ Import a project plan CSV</button>
         </div>
       </section>
+
+      {showCsvImporter && <CsvProjectImporter onClose={() => setShowCsvImporter(false)} onImported={() => { setShowCsvImporter(false); onOpenWorkspace() }} />}
 
       {showSetup && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(15,23,42,.38)', display: 'grid', placeItems: 'center', padding: 20 }}>
