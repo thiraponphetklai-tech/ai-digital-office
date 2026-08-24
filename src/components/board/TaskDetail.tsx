@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react'
-import { useTaskStore } from '@/store'
+import { usePrefsStore, useProjectStore, useResourceStore, useTaskStore } from '@/store'
 import type { Task, TaskStatus } from '@/types'
 
 const STATUS_OPTIONS: { value: TaskStatus; label: string; color: string }[] = [
@@ -17,7 +17,13 @@ interface TaskDetailProps {
 }
 
 export function TaskDetail({ task, onClose }: TaskDetailProps) {
-  const { updateTaskStatus, updateTaskProgress, setTaskBlocker } = useTaskStore()
+  const { updateTaskStatus, updateTaskProgress, setTaskBlocker, updateTaskDetails } = useTaskStore()
+  const { resources } = useResourceStore()
+  const { projects } = useProjectStore()
+  const activeProjectId = usePrefsStore(state => state.prefs.activeProjectId)
+  const project = projects.find(item => item.id === activeProjectId)
+  const availableResources = resources.filter(resource => resource.active && (project?.resourceIds?.includes(resource.id) ?? true))
+  const assigneeIds = task.assigneeIds ?? (task.ownerId ? [task.ownerId] : [])
 
   const [progress, setProgress] = useState(task.progress)
   const [blocker,  setBlocker]  = useState(task.blocker ?? '')
@@ -36,6 +42,11 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
     if (!blocker.trim()) return
     setTaskBlocker(task.id, blocker.trim())
     setShowBlockerInput(false)
+  }
+
+  function toggleAssignee(resourceId: string) {
+    const nextAssigneeIds = assigneeIds.includes(resourceId) ? assigneeIds.filter(id => id !== resourceId) : [...assigneeIds, resourceId]
+    updateTaskDetails(task.id, { assigneeIds: nextAssigneeIds, ownerId: nextAssigneeIds[0] ?? task.ownerId })
   }
 
   const daysLeft = task.dueDate
@@ -158,6 +169,10 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
                 borderRadius: 3, transition: 'width .3s',
               }} />
             </div>
+          </Section>
+
+          <Section title="Assigned players">
+            {availableResources.length ? <div style={{ display:'flex', flexDirection:'column', gap:7 }}>{availableResources.map(resource => <label key={resource.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', border:'1px solid #E5EAF2', borderRadius:8, cursor:'pointer', background:assigneeIds.includes(resource.id) ? '#EEF2FF' : '#FFFFFF' }}><input type="checkbox" checked={assigneeIds.includes(resource.id)} onChange={() => toggleAssignee(resource.id)} /><span style={{ flex:1, fontSize:12, color:'#344054', fontWeight:700 }}>{resource.name}</span><span style={{ fontSize:10, color:resource.type === 'VENDOR' ? '#7C3AED' : '#2563EB', fontWeight:800 }}>{resource.type === 'VENDOR' ? 'VENDOR' : 'EMPLOYEE'}</span><span style={{ fontSize:10, color:'#98A2B3' }}>{resource.role}</span></label>)}</div> : <p style={{ margin:0, color:'#98A2B3', fontSize:12 }}>เพิ่ม Player ใน Project Settings ก่อน</p>}
           </Section>
 
           {/* Meta info */}

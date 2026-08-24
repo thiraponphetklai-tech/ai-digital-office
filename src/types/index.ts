@@ -15,6 +15,7 @@ export interface Task {
   title: string
   description?: string
   ownerId: string
+  assigneeIds?: string[]
   teamId: string
   status: TaskStatus
   priority: TaskPriority
@@ -79,6 +80,19 @@ export interface AppEvent {
 
 export type UserRole = 'EMPLOYEE' | 'TEAM_LEAD' | 'MANAGER' | 'ADMIN'
 
+export type ResourceType = 'EMPLOYEE' | 'VENDOR'
+
+export interface Resource {
+  id: string
+  name: string
+  type: ResourceType
+  role: string
+  company?: string
+  skills?: string[]
+  capacityHoursPerDay: number
+  active: boolean
+}
+
 export interface Employee {
   id: string
   name: string
@@ -128,6 +142,7 @@ export interface Project {
   metrics?: ProjectMetric[]
   calendar?: ProjectCalendar
   milestones?: ProjectMilestone[]
+  resourceIds?: string[]
   teamIds: string[]
   memberIds: string[]
   startDate: string

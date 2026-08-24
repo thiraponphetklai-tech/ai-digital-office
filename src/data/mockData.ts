@@ -40,6 +40,7 @@ export const MOCK_DIGITAL_OFFICE_PROJECT: Project = {
   code: 'ADO-2026',
   description: 'Multi-project AI project management platform with 3D office and work sheets.',
   calendar: { workingDays: [1, 2, 3, 4, 5] },
+  resourceIds: ['u5'],
   milestones: [
     { id: 'ado-m1', title: 'Project Hub complete', date: '2026-08-21', status: 'COMPLETED' },
     { id: 'ado-m2', title: 'Schedule & calendar release', date: '2026-09-05', status: 'ON_TRACK' },
@@ -69,6 +70,7 @@ export const MOCK_M365_MIGRATION_PROJECT: Project = {
       { date: '2026-12-30', name: 'M365 Change Freeze' },
     ],
   },
+  resourceIds: ['u1', 'u2', 'u4', 'u5', 'vendor-abc'],
   milestones: [
     { id: 'm365-m1', title: 'HQ migration 50%', date: '2026-09-30', status: 'ON_TRACK', owner: 'Krit' },
     { id: 'm365-m2', title: 'Branch migration 50%', date: '2026-10-31', status: 'UPCOMING', owner: 'Nida' },
@@ -94,6 +96,7 @@ export const MOCK_BITLOCKER_PROJECT: Project = {
     workingDays: [1, 2, 3, 4, 5, 6],
     holidays: [{ date: '2026-08-15', name: 'Regional rollout pause' }],
   },
+  resourceIds: ['u1', 'u2', 'u4', 'u5', 'vendor-abc'],
   milestones: [
     { id: 'blm-m1', title: 'Branch rollout complete', date: '2026-08-18', status: 'COMPLETED', owner: 'Somchai' },
     { id: 'blm-m2', title: 'HQ rollout complete', date: '2026-08-29', status: 'ON_TRACK', owner: 'Krit' },

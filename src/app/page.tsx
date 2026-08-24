@@ -11,6 +11,7 @@ import { MockAgentService } from '@/services/mockAgent'
 import { TaskBoard } from '@/components/board/TaskBoard'
 import { ProjectOverviewDashboard } from '@/components/ProjectOverviewDashboard'
 import { ProjectTimeline } from '@/components/ProjectTimeline'
+import { ProjectResourcesDialog } from '@/components/ProjectResourcesDialog'
 
 // OfficeScene ใช้ Three.js — ต้อง dynamic import (ไม่รัน SSR)
 const OfficeScene = dynamic(
@@ -95,6 +96,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
   const { prefs, toggleDnd } = usePrefsStore()
   const [showLineUpdate, setShowLineUpdate] = React.useState(false)
   const [showProjectSettings, setShowProjectSettings] = React.useState(false)
+  const [showResources, setShowResources] = React.useState(false)
   const [targetDateDraft, setTargetDateDraft] = React.useState('')
   const [workingDaysDraft, setWorkingDaysDraft] = React.useState<number[]>([])
   const [holidaysDraft, setHolidaysDraft] = React.useState<{ date: string; name: string }[]>([])
@@ -236,6 +238,11 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
         cursor: activeProject ? 'pointer' : 'not-allowed', fontSize:11, fontWeight:700, opacity: activeProject ? 1 : .5,
       }}>Project Settings</button>
 
+      <button onClick={() => setShowResources(true)} disabled={!activeProject} style={{
+        border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', background:T.surface, color:T.indigo,
+        cursor: activeProject ? 'pointer' : 'not-allowed', fontSize:11, fontWeight:700, opacity: activeProject ? 1 : .5,
+      }}>Resources / Players</button>
+
       <button onClick={openLineUpdate} disabled={!activeProject} style={{
         border:'1px solid #A7F3D0', borderRadius:8, padding:'6px 10px', background:'#F0FDF4', color:'#047857',
         cursor: activeProject ? 'pointer' : 'not-allowed', fontSize:11, fontWeight:700, opacity: activeProject ? 1 : .5,
@@ -270,6 +277,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
         </span>
       </button>
     </header>
+    {showResources && activeProject && <ProjectResourcesDialog projectId={activeProject.id} onClose={() => setShowResources(false)} />}
     {showProjectSettings && activeProject && (
       <div style={{ position:'fixed', inset:0, zIndex:50, background:'rgba(15,23,42,.38)', display:'grid', placeItems:'center', padding:20 }}>
         <section role="dialog" aria-modal="true" aria-labelledby="project-settings-title" style={{ width:'min(620px, 100%)', maxHeight:'calc(100vh - 40px)', overflowY:'auto', background:'#FFFFFF', borderRadius:16, padding:24, boxShadow:'0 24px 64px rgba(15,23,42,.26)' }}>

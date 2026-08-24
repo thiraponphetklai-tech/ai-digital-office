@@ -8,7 +8,7 @@ import { persist } from 'zustand/middleware'
 import { eventBus } from '@/lib/eventBus'
 import { mapStatusToVisual } from '@/lib/visualStateMapper'
 import type {
-  Task, TaskStatus, AppEvent, EventType, Project,
+  Task, TaskStatus, AppEvent, EventType, Project, Resource,
   OfficeZone, VisualState, ChatMessage, UserPrefs, ProjectStats,
 } from '@/types'
 import {
@@ -33,7 +33,7 @@ interface TaskStore {
   updateTaskStatus:   (taskId: string, status: TaskStatus) => void
   updateTaskProgress: (taskId: string, progress: number) => void
   setTaskBlocker:     (taskId: string, blocker: string) => void
-  updateTaskDetails:  (taskId: string, updates: Partial<Pick<Task, 'title' | 'description' | 'ownerId' | 'teamId' | 'priority' | 'dueDate'>>) => void
+  updateTaskDetails:  (taskId: string, updates: Partial<Pick<Task, 'title' | 'description' | 'ownerId' | 'assigneeIds' | 'teamId' | 'priority' | 'dueDate'>>) => void
   addTask:            (task: Task) => void
   getTask:            (taskId: string) => Task | undefined
 }
@@ -192,7 +192,29 @@ export const useTaskStore = create<TaskStore>()(persist((set, get) => ({
   },
 }))
 
-// ── 2. PROJECT STORE ─────────────────────────────────────────────
+// ── 2. RESOURCE STORE ────────────────────────────────────────────
+
+interface ResourceStore {
+  resources: Resource[]
+  addResource: (resource: Resource) => void
+}
+
+export const useResourceStore = create<ResourceStore>()(persist(set => ({
+  resources: [
+    { id: 'u1', name: 'Somchai', type: 'EMPLOYEE', role: 'Endpoint Engineer', skills: ['BitLocker', 'Endpoint'], capacityHoursPerDay: 8, active: true },
+    { id: 'u2', name: 'Nida', type: 'EMPLOYEE', role: 'M365 Engineer', skills: ['M365', 'Intune'], capacityHoursPerDay: 8, active: true },
+    { id: 'u4', name: 'Krit', type: 'EMPLOYEE', role: 'Team Lead', skills: ['Migration', 'Security'], capacityHoursPerDay: 8, active: true },
+    { id: 'u5', name: 'Manager', type: 'EMPLOYEE', role: 'Project Manager', skills: ['Project Management'], capacityHoursPerDay: 8, active: true },
+    { id: 'vendor-abc', name: 'ABC Support Team', type: 'VENDOR', role: 'Deployment Support', company: 'ABC Technology', skills: ['Field Support'], capacityHoursPerDay: 8, active: true },
+  ],
+  addResource: (resource) => set(state => ({ resources: [...state.resources, resource] })),
+}), {
+  name: 'ai-digital-office-resources',
+  version: 1,
+  partialize: state => ({ resources: state.resources }),
+}))
+
+// ── 3. PROJECT STORE ─────────────────────────────────────────────
 
 interface ProjectStore {
   projects: Project[]
@@ -208,22 +230,23 @@ export const useProjectStore = create<ProjectStore>()(persist(set => ({
   })),
 }), {
   name: 'ai-digital-office-projects',
-  version: 6,
+  version: 7,
   partialize: state => ({ projects: state.projects }),
   migrate: persisted => {
     const state = persisted as Partial<ProjectStore>
+    const seedProjects = [MOCK_DIGITAL_OFFICE_PROJECT, MOCK_BITLOCKER_PROJECT, MOCK_M365_MIGRATION_PROJECT]
     const retainedProjects = (state.projects ?? [])
-      .filter(project => project.id !== 'phoenix' && project.name !== 'M365 Migration Tasks' && project.id !== 'm365-migration-project')
+      .filter(project => project.id !== 'phoenix' && project.name !== 'M365 Migration Tasks')
       .map(project => {
-        if (project.id === 'bitlocker-migration') return MOCK_BITLOCKER_PROJECT
-        if (project.id === 'ai-digital-office') return MOCK_DIGITAL_OFFICE_PROJECT
-        return project
+        const seed = seedProjects.find(item => item.id === project.id)
+        return seed ? { ...seed, ...project, resourceIds: project.resourceIds ?? seed.resourceIds } : project
       })
-    return { ...state, projects: [...retainedProjects, MOCK_M365_MIGRATION_PROJECT] } as ProjectStore
+    const missingSeedProjects = seedProjects.filter(seed => !retainedProjects.some(project => project.id === seed.id))
+    return { ...state, projects: [...retainedProjects, ...missingSeedProjects] } as ProjectStore
   },
 }))
 
-// ── 3. EVENT STORE (subscribes to eventBus) ───────────────────────
+// ── 4. EVENT STORE (subscribes to eventBus) ───────────────────────
 
 interface EventStore {
   events: AppEvent[]
@@ -247,7 +270,7 @@ export const useEventStore = create<EventStore>(set => {
   }
 })
 
-// ── 3. OFFICE STORE ───────────────────────────────────────────────
+// ── 5. OFFICE STORE ───────────────────────────────────────────────
 
 type ViewMode = 'all' | 'attention' | 'focus'
 
@@ -299,7 +322,7 @@ export const useOfficeStore = create<OfficeStore>(set => ({
   })),
 }))
 
-// ── 4. PREFS STORE ────────────────────────────────────────────────
+// ── 6. PREFS STORE ────────────────────────────────────────────────
 
 interface PrefsStore {
   prefs: UserPrefs
@@ -344,7 +367,7 @@ export const usePrefsStore = create<PrefsStore>()(persist(set => ({
   },
 }))
 
-// ── 5. CHAT STORE ─────────────────────────────────────────────────
+// ── 7. CHAT STORE ─────────────────────────────────────────────────
 
 interface ChatStore {
   messages:        ChatMessage[]
