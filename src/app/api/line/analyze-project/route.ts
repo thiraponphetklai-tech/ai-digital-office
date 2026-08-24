@@ -20,8 +20,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'LINE environment variables are not configured' }, { status: 500 })
   }
 
-  const { projectId } = await request.json().catch(() => ({}))
-  const selectedProjects = projectId ? projects.filter(item => item.id === projectId) : projects.filter(item => item.status === 'ACTIVE')
+  const { projectId, projectIds } = await request.json().catch(() => ({}))
+  const requestedProjectIds = Array.isArray(projectIds) ? projectIds.filter((id): id is string => typeof id === 'string') : projectId ? [projectId] : []
+  const selectedProjects = requestedProjectIds.length
+    ? projects.filter(item => requestedProjectIds.includes(item.id))
+    : projects.filter(item => item.status === 'ACTIVE')
   if (!selectedProjects.length) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 })
   }
