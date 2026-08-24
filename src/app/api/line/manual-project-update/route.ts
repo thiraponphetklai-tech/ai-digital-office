@@ -32,6 +32,22 @@ export async function POST(request: NextRequest) {
       ? Math.round(tasks.reduce((total, task) => total + task.progress, 0) / tasks.length)
       : 0
   const date = new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date())
+  const attentionTasks = tasks.filter(task => task.status === 'BLOCKED' || task.status === 'AT_RISK')
+  const lowestMetric = project.metrics?.reduce((lowest, metric) => metric.completed / metric.total < lowest.completed / lowest.total ? metric : lowest)
+  const aiSummary = [
+    'สวัสดีครับ ผมคือ AI Agent ผู้ช่วยสำหรับการบริหารโปรเจคของคุณ',
+    attentionTasks.length
+      ? `พบ ${attentionTasks.length} งานที่ต้องติดตามเป็นพิเศษ: ${attentionTasks.slice(0, 2).map(task => task.title).join(', ')}`
+      : 'ไม่พบงาน Blocked หรือ At Risk ในขณะนี้',
+    lowestMetric
+      ? `${lowestMetric.label} มีความคืบหน้า ${((lowestMetric.completed / lowestMetric.total) * 100).toFixed(2)}% (${lowestMetric.completed.toLocaleString()} / ${lowestMetric.total.toLocaleString()} ${lowestMetric.unit ?? 'เครื่อง'})${lowestMetric.detail ? ` — ${lowestMetric.detail}` : ''}`
+      : `มีงานกำลังดำเนินการ ${count('IN_PROGRESS')} งาน จากทั้งหมด ${tasks.length} งาน`,
+    attentionTasks.length
+      ? 'แนะนำให้ติดตาม owner ของงานที่มีความเสี่ยงก่อน เพื่อป้องกันผลกระทบต่อแผนงาน'
+      : progress >= 95
+        ? 'โครงการใกล้เสร็จสมบูรณ์ แนะนำติดตามงานคงเหลือเพื่อปิดโครงการตามแผน'
+        : 'ภาพรวมยังเป็นไปตามแผน แนะนำติดตามความคืบหน้าของงานที่กำลังดำเนินการอย่างต่อเนื่อง',
+  ]
 
   const text = [
     `📊 Project Update — ${project.name}`,
@@ -45,6 +61,9 @@ export async function POST(request: NextRequest) {
     '',
     `✅ Done: ${count('DONE')} | 🔵 In progress: ${count('IN_PROGRESS')}`,
     `⚠️ At risk: ${count('AT_RISK')} | 🔴 Blocked: ${count('BLOCKED')} | ⏳ To do: ${count('TODO')}`,
+    '',
+    '🤖 AI Summary:',
+    ...aiSummary.map(item => `• ${item}`),
   ].join('\n')
 
   const response = await fetch('https://api.line.me/v2/bot/message/push', {
