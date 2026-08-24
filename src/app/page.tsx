@@ -13,6 +13,7 @@ import { ProjectOverviewDashboard } from '@/components/ProjectOverviewDashboard'
 import { ProjectTimeline } from '@/components/ProjectTimeline'
 import { ProjectResourcesDialog } from '@/components/ProjectResourcesDialog'
 import { ResourceWorkloadView } from '@/components/ResourceWorkloadView'
+import { ProjectCalendarView } from '@/components/ProjectCalendarView'
 
 // OfficeScene ใช้ Three.js — ต้อง dynamic import (ไม่รัน SSR)
 const OfficeScene = dynamic(
@@ -326,11 +327,12 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
 }
 
 // ── Sidebar ───────────────────────────────────────────────────────
-function Sidebar({ view, onViewChange }: { view: 'office'|'board'|'timeline'|'resources'; onViewChange: (v:'office'|'board'|'timeline'|'resources')=>void }) {
+function Sidebar({ view, onViewChange }: { view: 'office'|'board'|'timeline'|'calendar'|'resources'; onViewChange: (v:'office'|'board'|'timeline'|'calendar'|'resources')=>void }) {
   const navItems = [
     { icon:'▦', label:'Project Overview', key:'office' as const },
     { icon:'☰', label:'Task Board',     key:'board'  as const },
     { icon:'◫', label:'Timeline',       key:'timeline' as const },
+    { icon:'▣', label:'Calendar',       key:'calendar' as const },
   ]
   const bottomItems = [{ icon:'◎', label:'Resource Workload', key:'resources' as const }, { icon:'⊞', label:'Reports', key:null }]
   return (
@@ -579,7 +581,7 @@ function SectionTitle({ children, color, icon }: { children: React.ReactNode; co
 
 // ── Root ──────────────────────────────────────────────────────────
 export default function AIDigitalOffice() {
-  const [view, setView] = React.useState<'office' | 'board' | 'timeline' | 'resources'>('office')
+  const [view, setView] = React.useState<'office' | 'board' | 'timeline' | 'calendar' | 'resources'>('office')
   const [showHub, setShowHub] = React.useState(true)
 
   if (showHub) {
@@ -615,6 +617,8 @@ export default function AIDigitalOffice() {
               <TaskBoard />
             ) : view === 'timeline' ? (
               <ProjectTimeline />
+            ) : view === 'calendar' ? (
+              <ProjectCalendarView />
             ) : view === 'resources' ? (
               <ResourceWorkloadView />
             ) : (
