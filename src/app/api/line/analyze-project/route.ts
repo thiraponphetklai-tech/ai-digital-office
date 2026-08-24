@@ -1,12 +1,12 @@
+
 import { NextRequest, NextResponse } from 'next/server'
 import {
   MOCK_BITLOCKER_PROJECT,
   MOCK_DIGITAL_OFFICE_PROJECT,
-  MOCK_PROJECT,
   MOCK_TASKS,
 } from '@/data/mockData'
 
-const projects = [MOCK_PROJECT, MOCK_BITLOCKER_PROJECT, MOCK_DIGITAL_OFFICE_PROJECT]
+const projects = [MOCK_BITLOCKER_PROJECT, MOCK_DIGITAL_OFFICE_PROJECT]
 
 export async function POST(request: NextRequest) {
   if (request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -29,7 +29,9 @@ export async function POST(request: NextRequest) {
   const messages = selectedProjects.map(project => {
     const tasks = MOCK_TASKS.filter(task => task.projectId === project.id)
     const count = (status: string) => tasks.filter(task => task.status === status).length
-    const progress = tasks.length ? Math.round(tasks.reduce((total, task) => total + task.progress, 0) / tasks.length) : 0
+    const metricTotal = project.metrics?.reduce((total, metric) => total + metric.total, 0) ?? 0
+    const metricCompleted = project.metrics?.reduce((total, metric) => total + metric.completed, 0) ?? 0
+    const progress = metricTotal ? Number(((metricCompleted / metricTotal) * 100).toFixed(2)) : tasks.length ? Math.round(tasks.reduce((total, task) => total + task.progress, 0) / tasks.length) : 0
     const attention = tasks.filter(task => task.status === 'BLOCKED' || task.status === 'AT_RISK')
     const activeWork = tasks.filter(task => task.status === 'IN_PROGRESS')
     const followUps = [...attention, ...activeWork].slice(0, 3)
@@ -45,9 +47,13 @@ export async function POST(request: NextRequest) {
         `📊 AI Project Analysis — ${project.name}`,
         `วันที่ ${date}`,
         '',
-        `Overall progress: ${progress}%`,
+        `Overall progress: ${progress}%${metricTotal ? ` (${metricCompleted.toLocaleString()} / ${metricTotal.toLocaleString()} เครื่อง)` : ''}`,
+        ...(project.metrics?.map(metric => {
+          const metricProgress = ((metric.completed / metric.total) * 100).toFixed(2)
+          return `• ${metric.label}: ${metric.completed.toLocaleString()} / ${metric.total.toLocaleString()} เครื่อง (${metricProgress}%)${metric.detail ? ` — ${metric.detail}` : ''}`
+        }) ?? []),
         `✅ Done: ${count('DONE')} | 🔵 In progress: ${count('IN_PROGRESS')}`,
-        `⚠️ At risk: ${count('AT_RISK')} | 🔴 Blocked: ${count('BLOCKED')} | ⏳ To do: ${count('TODO')}`,
+        `⚠️ At risk: ${count('AT_RISK')} | 🔴 Blocked: ${count('BLOCKED')} | ⏳ To do: ${count('TODO')}`, 
         '',
         followUps.length ? 'งานที่ควรติดตาม:' : 'สถานะการติดตาม:',
         ...(followUps.length ? followUps.map(task => `• ${task.title} — ${task.blocker || task.description || task.status}`) : ['• ไม่มีงาน Blocked หรือ At Risk ในขณะนี้']),

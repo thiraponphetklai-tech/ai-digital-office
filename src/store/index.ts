@@ -12,7 +12,7 @@ import type {
   OfficeZone, VisualState, ChatMessage, UserPrefs, ProjectStats,
 } from '@/types'
 import {
-  MOCK_PROJECT, MOCK_DIGITAL_OFFICE_PROJECT, MOCK_BITLOCKER_PROJECT, MOCK_TASKS, MOCK_EVENTS, MOCK_ZONES,
+  MOCK_DIGITAL_OFFICE_PROJECT, MOCK_BITLOCKER_PROJECT, MOCK_TASKS, MOCK_EVENTS, MOCK_ZONES,
   MOCK_MESSAGES, DEFAULT_USER_PREFS, AI_REPLIES,
 } from '@/data/mockData'
 
@@ -39,8 +39,8 @@ interface TaskStore {
 }
 
 export const useTaskStore = create<TaskStore>()(persist((set, get) => ({
-  tasks: MOCK_TASKS,
-  stats: computeStats(MOCK_TASKS),
+  tasks: MOCK_TASKS.filter(task => task.projectId !== 'phoenix'),
+  stats: computeStats(MOCK_TASKS.filter(task => task.projectId !== 'phoenix')),
 
   updateTaskStatus: (taskId, status) => {
     set(state => {
@@ -177,7 +177,18 @@ export const useTaskStore = create<TaskStore>()(persist((set, get) => ({
   getTask: (taskId) => get().tasks.find(t => t.id === taskId),
 }), {
   name: 'ai-digital-office-tasks',
+  version: 3,
   partialize: state => ({ tasks: state.tasks, stats: state.stats }),
+  migrate: persisted => {
+    const state = persisted as Partial<TaskStore>
+    const updatedTasks = (state.tasks ?? [])
+      .filter(task => task.projectId !== 'phoenix')
+      .map(task => {
+        const replacement = MOCK_TASKS.find(seed => seed.id === task.id && task.projectId === 'bitlocker-migration')
+        return replacement ?? task
+      })
+    return { ...state, tasks: updatedTasks, stats: computeStats(updatedTasks) } as TaskStore
+  },
 }))
 
 // ── 2. PROJECT STORE ─────────────────────────────────────────────
@@ -188,11 +199,21 @@ interface ProjectStore {
 }
 
 export const useProjectStore = create<ProjectStore>()(persist(set => ({
-  projects: [MOCK_PROJECT, MOCK_DIGITAL_OFFICE_PROJECT, MOCK_BITLOCKER_PROJECT],
+  projects: [MOCK_DIGITAL_OFFICE_PROJECT, MOCK_BITLOCKER_PROJECT],
   addProject: (project) => set(state => ({ projects: [...state.projects, project] })),
 }), {
   name: 'ai-digital-office-projects',
+  version: 3,
   partialize: state => ({ projects: state.projects }),
+  migrate: persisted => {
+    const state = persisted as Partial<ProjectStore>
+    return {
+      ...state,
+      projects: (state.projects ?? [])
+        .filter(project => project.id !== 'phoenix')
+        .map(project => project.id === 'bitlocker-migration' ? MOCK_BITLOCKER_PROJECT : project),
+    } as ProjectStore
+  },
 }))
 
 // ── 3. EVENT STORE (subscribes to eventBus) ───────────────────────
@@ -282,7 +303,7 @@ interface PrefsStore {
 }
 
 export const usePrefsStore = create<PrefsStore>()(persist(set => ({
-  prefs: DEFAULT_USER_PREFS,
+  prefs: { ...DEFAULT_USER_PREFS, activeProjectId: 'bitlocker-migration' },
 
   setActiveProject: (projectId) => set(state => ({
     prefs: { ...state.prefs, activeProjectId: projectId },
@@ -305,7 +326,15 @@ export const usePrefsStore = create<PrefsStore>()(persist(set => ({
   })),
 }), {
   name: 'ai-digital-office-prefs',
+  version: 2,
   partialize: state => ({ prefs: state.prefs }),
+  migrate: persisted => {
+    const state = persisted as Partial<PrefsStore>
+    return {
+      ...state,
+      prefs: { ...DEFAULT_USER_PREFS, ...state.prefs, activeProjectId: state.prefs?.activeProjectId === 'phoenix' ? 'bitlocker-migration' : state.prefs?.activeProjectId ?? 'bitlocker-migration' },
+    } as PrefsStore
+  },
 }))
 
 // ── 5. CHAT STORE ─────────────────────────────────────────────────
@@ -333,7 +362,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }))
     eventBus.emit({
       id: `e-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, type: 'line.command_received',
-      projectId: 'phoenix', timestamp: new Date().toISOString(),
+      projectId: usePrefsStore.getState().prefs.activeProjectId, timestamp: new Date().toISOString(),
       message: `Manager: "${text.slice(0, 40)}${text.length > 40 ? '…' : ''}"`,
       color: '#059669',
     })
@@ -354,7 +383,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }))
     eventBus.emit({
       id: `e-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, type: 'line.report_sent',
-      projectId: 'phoenix', timestamp: new Date().toISOString(),
+      projectId: usePrefsStore.getState().prefs.activeProjectId, timestamp: new Date().toISOString(),
       message: `AI: "${text.slice(0, 50)}${text.length > 50 ? '…' : ''}"`,
       color: '#059669',
     })
