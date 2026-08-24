@@ -92,9 +92,11 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
   const { stats } = useTaskStore()
   const { projects } = useProjectStore()
   const { prefs, toggleDnd } = usePrefsStore()
+  const [showLineUpdate, setShowLineUpdate] = React.useState(false)
   const activeProject = projects.find(project => project.id === prefs.activeProjectId)
 
   return (
+    <>
     <header style={{
       height: 52, background: T.surface,
       borderBottom: `1px solid ${T.border}`,
@@ -137,6 +139,11 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
         <span style={{ color:T.textMuted, fontSize:10 }}>▾</span>
       </div>
 
+      <button onClick={() => setShowLineUpdate(true)} disabled={!activeProject} style={{
+        border:'1px solid #A7F3D0', borderRadius:8, padding:'6px 10px', background:'#F0FDF4', color:'#047857',
+        cursor: activeProject ? 'pointer' : 'not-allowed', fontSize:11, fontWeight:700, opacity: activeProject ? 1 : .5,
+      }}>Update LINE</button>
+
       <div style={{ flex:1 }} />
 
       {/* Alert pills */}
@@ -166,6 +173,24 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
         </span>
       </button>
     </header>
+    {showLineUpdate && activeProject && (
+      <div style={{ position:'fixed', inset:0, zIndex:50, background:'rgba(15,23,42,.38)', display:'grid', placeItems:'center', padding:20 }}>
+        <section role="dialog" aria-modal="true" aria-labelledby="line-update-title" style={{ width:'min(440px, 100%)', background:'#FFFFFF', borderRadius:16, padding:24, boxShadow:'0 24px 64px rgba(15,23,42,.26)' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'start', gap:16 }}>
+            <div><div style={{ fontSize:11, fontWeight:800, letterSpacing:'.08em', color:'#059669' }}>LINE UPDATE</div><h2 id="line-update-title" style={{ margin:'7px 0 8px', fontSize:20 }}>Send project update?</h2></div>
+            <button type="button" onClick={() => setShowLineUpdate(false)} aria-label="Close" style={{ width:28, height:28, border:'1px solid #E5EAF2', borderRadius:7, background:'#FFFFFF', cursor:'pointer', color:'#667085', fontSize:20, lineHeight:1 }}>×</button>
+          </div>
+          <p style={{ margin:'0 0 12px', color:'#475467', fontSize:13, lineHeight:1.6 }}>จะส่งรายงานความคืบหน้าล่าสุดไปยัง LINE Group กลาง (Mock)</p>
+          <div style={{ padding:'12px 14px', borderRadius:10, background:'#F0FDF4', border:'1px solid #BBF7D0' }}><strong style={{ display:'block', color:'#166534', fontSize:14 }}>{activeProject.name}</strong><span style={{ color:'#15803D', fontSize:11 }}>{activeProject.code ?? activeProject.id}</span></div>
+          <p style={{ margin:'14px 0 0', color:'#98A2B3', fontSize:11, lineHeight:1.5 }}>ขั้นตอนนี้เป็น UI mock เท่านั้น ยังไม่มีการส่งข้อความไป LINE จริง</p>
+          <div style={{ display:'flex', justifyContent:'end', gap:8, marginTop:22 }}>
+            <button type="button" onClick={() => setShowLineUpdate(false)} style={{ border:'1px solid #D8DEE9', borderRadius:8, padding:'9px 14px', cursor:'pointer', background:'#FFFFFF', color:'#475467', fontSize:12, fontWeight:700 }}>Cancel</button>
+            <button type="button" onClick={() => setShowLineUpdate(false)} style={{ border:'none', borderRadius:8, padding:'9px 14px', cursor:'pointer', background:'linear-gradient(135deg,#059669,#16A34A)', color:'#FFFFFF', fontSize:12, fontWeight:800 }}>Send Update</button>
+          </div>
+        </section>
+      </div>
+    )}
+    </>
   )
 }
 
