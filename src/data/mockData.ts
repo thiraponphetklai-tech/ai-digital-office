@@ -39,6 +39,12 @@ export const MOCK_DIGITAL_OFFICE_PROJECT: Project = {
   name: 'AI Digital Office Platform',
   code: 'ADO-2026',
   description: 'Multi-project AI project management platform with 3D office and work sheets.',
+  calendar: { workingDays: [1, 2, 3, 4, 5] },
+  milestones: [
+    { id: 'ado-m1', title: 'Project Hub complete', date: '2026-08-21', status: 'COMPLETED' },
+    { id: 'ado-m2', title: 'Schedule & calendar release', date: '2026-09-05', status: 'ON_TRACK' },
+    { id: 'ado-m3', title: 'Resource planning release', date: '2026-09-30', status: 'UPCOMING' },
+  ],
   teamIds: ['product', 'engineering'],
   memberIds: ['u5'],
   startDate: '2026-08-01',
@@ -55,6 +61,19 @@ export const MOCK_M365_MIGRATION_PROJECT: Project = {
     { label: 'HQ', completed: 2418, total: 3388, unit: 'เครื่อง', detail: '71.37% · เหลือ 970 เครื่อง — on plan' },
     { label: 'Branch', completed: 950, total: 1918, unit: 'สาขา', detail: '49.53% · on plan' },
   ],
+  calendar: {
+    workingDays: [1, 2, 3, 4, 5],
+    holidays: [
+      { date: '2026-12-28', name: 'M365 Change Freeze' },
+      { date: '2026-12-29', name: 'M365 Change Freeze' },
+      { date: '2026-12-30', name: 'M365 Change Freeze' },
+    ],
+  },
+  milestones: [
+    { id: 'm365-m1', title: 'HQ migration 50%', date: '2026-09-30', status: 'ON_TRACK', owner: 'Krit' },
+    { id: 'm365-m2', title: 'Branch migration 50%', date: '2026-10-31', status: 'UPCOMING', owner: 'Nida' },
+    { id: 'm365-m3', title: 'Migration complete', date: '2026-12-31', status: 'UPCOMING', owner: 'Manager' },
+  ],
   teamIds: ['m365', 'endpoint', 'support'],
   memberIds: ['u1', 'u2', 'u4', 'u5'],
   startDate: '2026-08-01',
@@ -70,6 +89,15 @@ export const MOCK_BITLOCKER_PROJECT: Project = {
   metrics: [
     { label: 'Branch', completed: 5912, total: 5912, detail: 'ดำเนินการครบ 100%' },
     { label: 'HQ', completed: 3729, total: 3733, detail: 'เหลือ 4 เครื่อง: นัดหมายแล้ว 1, รอตอบกลับและยืนยัน 3' },
+  ],
+  calendar: {
+    workingDays: [1, 2, 3, 4, 5, 6],
+    holidays: [{ date: '2026-08-15', name: 'Regional rollout pause' }],
+  },
+  milestones: [
+    { id: 'blm-m1', title: 'Branch rollout complete', date: '2026-08-18', status: 'COMPLETED', owner: 'Somchai' },
+    { id: 'blm-m2', title: 'HQ rollout complete', date: '2026-08-29', status: 'ON_TRACK', owner: 'Krit' },
+    { id: 'blm-m3', title: 'Project closure', date: '2026-08-31', status: 'UPCOMING', owner: 'Manager' },
   ],
   teamIds: ['endpoint', 'security', 'support'],
   memberIds: ['u1', 'u2', 'u4', 'u5'],

@@ -197,20 +197,28 @@ export const useTaskStore = create<TaskStore>()(persist((set, get) => ({
 interface ProjectStore {
   projects: Project[]
   addProject: (project: Project) => void
+  updateProject: (projectId: string, updates: Partial<Project>) => void
 }
 
 export const useProjectStore = create<ProjectStore>()(persist(set => ({
   projects: [MOCK_DIGITAL_OFFICE_PROJECT, MOCK_BITLOCKER_PROJECT, MOCK_M365_MIGRATION_PROJECT],
   addProject: (project) => set(state => ({ projects: [...state.projects, project] })),
+  updateProject: (projectId, updates) => set(state => ({
+    projects: state.projects.map(project => project.id === projectId ? { ...project, ...updates } : project),
+  })),
 }), {
   name: 'ai-digital-office-projects',
-  version: 4,
+  version: 6,
   partialize: state => ({ projects: state.projects }),
   migrate: persisted => {
     const state = persisted as Partial<ProjectStore>
     const retainedProjects = (state.projects ?? [])
       .filter(project => project.id !== 'phoenix' && project.name !== 'M365 Migration Tasks' && project.id !== 'm365-migration-project')
-      .map(project => project.id === 'bitlocker-migration' ? MOCK_BITLOCKER_PROJECT : project)
+      .map(project => {
+        if (project.id === 'bitlocker-migration') return MOCK_BITLOCKER_PROJECT
+        if (project.id === 'ai-digital-office') return MOCK_DIGITAL_OFFICE_PROJECT
+        return project
+      })
     return { ...state, projects: [...retainedProjects, MOCK_M365_MIGRATION_PROJECT] } as ProjectStore
   },
 }))

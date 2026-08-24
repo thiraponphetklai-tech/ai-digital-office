@@ -99,12 +99,35 @@ export interface ProjectMetric {
   detail?: string
 }
 
+export interface ProjectHoliday {
+  date: string
+  name: string
+}
+
+export interface ProjectCalendar {
+  workingDays: number[]
+  holidays?: ProjectHoliday[]
+}
+
+export type MilestoneStatus = 'UPCOMING' | 'ON_TRACK' | 'AT_RISK' | 'COMPLETED'
+
+export interface ProjectMilestone {
+  id: string
+  title: string
+  date: string
+  status: MilestoneStatus
+  owner?: string
+  description?: string
+}
+
 export interface Project {
   id: string
   name: string
   code?: string
   description?: string
   metrics?: ProjectMetric[]
+  calendar?: ProjectCalendar
+  milestones?: ProjectMilestone[]
   teamIds: string[]
   memberIds: string[]
   startDate: string

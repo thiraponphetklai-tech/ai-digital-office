@@ -10,6 +10,7 @@ import { ChatPanel } from '@/components/ChatPanel'
 import { MockAgentService } from '@/services/mockAgent'
 import { TaskBoard } from '@/components/board/TaskBoard'
 import { ProjectOverviewDashboard } from '@/components/ProjectOverviewDashboard'
+import { ProjectTimeline } from '@/components/ProjectTimeline'
 
 // OfficeScene ใช้ Three.js — ต้อง dynamic import (ไม่รัน SSR)
 const OfficeScene = dynamic(
@@ -90,9 +91,20 @@ const EVENT_ICON: Record<string, string> = {
 // ── Topbar ────────────────────────────────────────────────────────
 function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
   const { stats } = useTaskStore()
-  const { projects } = useProjectStore()
+  const { projects, updateProject } = useProjectStore()
   const { prefs, toggleDnd } = usePrefsStore()
   const [showLineUpdate, setShowLineUpdate] = React.useState(false)
+  const [showProjectSettings, setShowProjectSettings] = React.useState(false)
+  const [targetDateDraft, setTargetDateDraft] = React.useState('')
+  const [workingDaysDraft, setWorkingDaysDraft] = React.useState<number[]>([])
+  const [holidaysDraft, setHolidaysDraft] = React.useState<{ date: string; name: string }[]>([])
+  const [holidayDateDraft, setHolidayDateDraft] = React.useState('')
+  const [holidayNameDraft, setHolidayNameDraft] = React.useState('')
+  const [milestonesDraft, setMilestonesDraft] = React.useState<{ id: string; title: string; date: string; status: 'UPCOMING' | 'ON_TRACK' | 'AT_RISK' | 'COMPLETED'; owner?: string }[]>([])
+  const [milestoneTitleDraft, setMilestoneTitleDraft] = React.useState('')
+  const [milestoneDateDraft, setMilestoneDateDraft] = React.useState('')
+  const [milestoneOwnerDraft, setMilestoneOwnerDraft] = React.useState('')
+  const [settingsError, setSettingsError] = React.useState('')
   const [lineUpdateState, setLineUpdateState] = React.useState<'idle' | 'sending' | 'sent' | 'failed'>('idle')
   const [lineUpdateError, setLineUpdateError] = React.useState('')
   const activeProject = projects.find(project => project.id === prefs.activeProjectId)
@@ -120,6 +132,59 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
     setLineUpdateState('idle')
     setLineUpdateError('')
     setShowLineUpdate(true)
+  }
+
+  function openProjectSettings() {
+    if (!activeProject) return
+    setTargetDateDraft(activeProject.targetDate)
+    setWorkingDaysDraft(activeProject.calendar?.workingDays ?? [1, 2, 3, 4, 5])
+    setHolidaysDraft(activeProject.calendar?.holidays ?? [])
+    setHolidayDateDraft('')
+    setHolidayNameDraft('')
+    setMilestonesDraft(activeProject.milestones ?? [])
+    setMilestoneTitleDraft('')
+    setMilestoneDateDraft('')
+    setMilestoneOwnerDraft('')
+    setSettingsError('')
+    setShowProjectSettings(true)
+  }
+
+  function toggleWorkingDay(day: number) {
+    setWorkingDaysDraft(current => current.includes(day) ? current.filter(item => item !== day) : [...current, day].sort())
+  }
+
+  function addProjectHoliday() {
+    if (!holidayDateDraft || !holidayNameDraft.trim()) return
+    if (holidaysDraft.some(holiday => holiday.date === holidayDateDraft)) {
+      setSettingsError('มีวันหยุดในวันที่เลือกแล้ว')
+      return
+    }
+    setHolidaysDraft(current => [...current, { date: holidayDateDraft, name: holidayNameDraft.trim() }].sort((a, b) => a.date.localeCompare(b.date)))
+    setHolidayDateDraft('')
+    setHolidayNameDraft('')
+    setSettingsError('')
+  }
+
+  function addMilestone() {
+    if (!milestoneTitleDraft.trim() || !milestoneDateDraft) return
+    setMilestonesDraft(current => [...current, { id: `milestone-${Date.now()}`, title: milestoneTitleDraft.trim(), date: milestoneDateDraft, status: 'UPCOMING' as const, owner: milestoneOwnerDraft.trim() || undefined }].sort((a, b) => a.date.localeCompare(b.date)))
+    setMilestoneTitleDraft('')
+    setMilestoneDateDraft('')
+    setMilestoneOwnerDraft('')
+  }
+
+  function saveProjectSettings() {
+    if (!activeProject) return
+    if (workingDaysDraft.length === 0) {
+      setSettingsError('กรุณาเลือกอย่างน้อย 1 วันทำงาน')
+      return
+    }
+    if (targetDateDraft < activeProject.startDate) {
+      setSettingsError('Target date ต้องไม่ก่อนวันเริ่มโครงการ')
+      return
+    }
+    updateProject(activeProject.id, { targetDate: targetDateDraft, calendar: { workingDays: workingDaysDraft, holidays: holidaysDraft }, milestones: milestonesDraft })
+    setShowProjectSettings(false)
   }
 
   return (
@@ -166,6 +231,11 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
         <span style={{ color:T.textMuted, fontSize:10 }}>▾</span>
       </div>
 
+      <button onClick={openProjectSettings} disabled={!activeProject} style={{
+        border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', background:T.surface, color:T.indigo,
+        cursor: activeProject ? 'pointer' : 'not-allowed', fontSize:11, fontWeight:700, opacity: activeProject ? 1 : .5,
+      }}>Project Settings</button>
+
       <button onClick={openLineUpdate} disabled={!activeProject} style={{
         border:'1px solid #A7F3D0', borderRadius:8, padding:'6px 10px', background:'#F0FDF4', color:'#047857',
         cursor: activeProject ? 'pointer' : 'not-allowed', fontSize:11, fontWeight:700, opacity: activeProject ? 1 : .5,
@@ -200,6 +270,28 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
         </span>
       </button>
     </header>
+    {showProjectSettings && activeProject && (
+      <div style={{ position:'fixed', inset:0, zIndex:50, background:'rgba(15,23,42,.38)', display:'grid', placeItems:'center', padding:20 }}>
+        <section role="dialog" aria-modal="true" aria-labelledby="project-settings-title" style={{ width:'min(620px, 100%)', maxHeight:'calc(100vh - 40px)', overflowY:'auto', background:'#FFFFFF', borderRadius:16, padding:24, boxShadow:'0 24px 64px rgba(15,23,42,.26)' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'start', gap:16 }}>
+            <div><div style={{ fontSize:11, fontWeight:800, letterSpacing:'.08em', color:T.indigo }}>PROJECT SETTINGS</div><h2 id="project-settings-title" style={{ margin:'7px 0 4px', fontSize:20 }}>Schedule & Calendar</h2><p style={{ margin:0, color:T.textSub, fontSize:12 }}>{activeProject.name}</p></div>
+            <button type="button" onClick={() => setShowProjectSettings(false)} aria-label="Close" style={{ width:28, height:28, border:'1px solid #E5EAF2', borderRadius:7, background:'#FFFFFF', cursor:'pointer', color:'#667085', fontSize:20, lineHeight:1 }}>×</button>
+          </div>
+          <div style={{ marginTop:20 }}>
+            <label style={{ display:'block', color:'#475467', fontSize:12, fontWeight:700 }}>Target date<input type="date" min={activeProject.startDate} value={targetDateDraft} onChange={event => setTargetDateDraft(event.target.value)} style={{ display:'block', width:'100%', marginTop:6, border:'1px solid #D8DEE9', borderRadius:8, padding:'9px 10px', color:'#172033', background:'#FFFFFF', fontSize:13 }} /></label>
+            <div style={{ marginTop:18 }}><div style={{ color:'#475467', fontSize:12, fontWeight:700, marginBottom:8 }}>Working days</div><div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>{[['อา.', 0], ['จ.', 1], ['อ.', 2], ['พ.', 3], ['พฤ.', 4], ['ศ.', 5], ['ส.', 6]].map(([label, day]) => <button key={String(day)} type="button" onClick={() => toggleWorkingDay(Number(day))} style={{ border:`1px solid ${workingDaysDraft.includes(Number(day)) ? '#A5B4FC' : '#D8DEE9'}`, borderRadius:8, padding:'7px 11px', cursor:'pointer', background:workingDaysDraft.includes(Number(day)) ? '#EEF2FF' : '#FFFFFF', color:workingDaysDraft.includes(Number(day)) ? '#4338CA' : '#667085', fontSize:12, fontWeight:700 }}>{label}</button>)}</div><p style={{ margin:'8px 0 0', color:'#98A2B3', fontSize:11 }}>ตัดวันหยุดบริษัทและวันหยุดเฉพาะ Project ออกจากการคำนวณวันทำการอัตโนมัติ</p></div>
+            <div style={{ marginTop:20, paddingTop:18, borderTop:'1px solid #EEF2F7' }}><div style={{ color:'#475467', fontSize:12, fontWeight:700 }}>Project holidays</div><div style={{ display:'grid', gridTemplateColumns:'150px 1fr auto', gap:8, marginTop:9 }}><input type="date" value={holidayDateDraft} onChange={event => setHolidayDateDraft(event.target.value)} style={{ border:'1px solid #D8DEE9', borderRadius:8, padding:'8px', fontSize:12 }} /><input value={holidayNameDraft} onChange={event => setHolidayNameDraft(event.target.value)} placeholder="เช่น Change freeze" style={{ border:'1px solid #D8DEE9', borderRadius:8, padding:'8px', fontSize:12 }} /><button type="button" onClick={addProjectHoliday} style={{ border:'none', borderRadius:8, padding:'8px 11px', cursor:'pointer', background:'#EEF2FF', color:'#4338CA', fontSize:12, fontWeight:800 }}>+ Add</button></div>
+              <div style={{ marginTop:10 }}>{holidaysDraft.length ? holidaysDraft.map(holiday => <div key={holiday.date} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, padding:'8px 0', borderBottom:'1px solid #F2F4F7', fontSize:12 }}><span><strong style={{ color:'#344054' }}>{new Date(`${holiday.date}T00:00:00`).toLocaleDateString('th-TH')}</strong><span style={{ color:'#667085' }}> · {holiday.name}</span></span><button type="button" onClick={() => setHolidaysDraft(current => current.filter(item => item.date !== holiday.date))} style={{ border:'none', background:'transparent', color:'#B91C1C', cursor:'pointer', fontSize:11, fontWeight:700 }}>Remove</button></div>) : <p style={{ margin:'10px 0 0', color:'#98A2B3', fontSize:11 }}>ยังไม่มีวันหยุดเฉพาะโครงการ</p>}</div>
+            </div>
+            <div style={{ marginTop:20, paddingTop:18, borderTop:'1px solid #EEF2F7' }}><div style={{ color:'#475467', fontSize:12, fontWeight:700 }}>Milestones</div><div style={{ display:'grid', gridTemplateColumns:'1fr 150px 120px auto', gap:8, marginTop:9 }}><input value={milestoneTitleDraft} onChange={event => setMilestoneTitleDraft(event.target.value)} placeholder="Milestone name" style={{ border:'1px solid #D8DEE9', borderRadius:8, padding:'8px', fontSize:12 }} /><input type="date" min={activeProject.startDate} max={targetDateDraft} value={milestoneDateDraft} onChange={event => setMilestoneDateDraft(event.target.value)} style={{ border:'1px solid #D8DEE9', borderRadius:8, padding:'8px', fontSize:12 }} /><input value={milestoneOwnerDraft} onChange={event => setMilestoneOwnerDraft(event.target.value)} placeholder="Owner (optional)" style={{ border:'1px solid #D8DEE9', borderRadius:8, padding:'8px', fontSize:12 }} /><button type="button" onClick={addMilestone} style={{ border:'none', borderRadius:8, padding:'8px 11px', cursor:'pointer', background:'#EEF2FF', color:'#4338CA', fontSize:12, fontWeight:800 }}>+ Add</button></div>
+              <div style={{ marginTop:10 }}>{milestonesDraft.length ? milestonesDraft.map(milestone => <div key={milestone.id} style={{ display:'grid', gridTemplateColumns:'1fr 120px auto', alignItems:'center', gap:8, padding:'9px 0', borderBottom:'1px solid #F2F4F7', fontSize:12 }}><span><strong style={{ color:'#344054' }}>{new Date(`${milestone.date}T00:00:00`).toLocaleDateString('th-TH')}</strong><span style={{ color:'#667085' }}> · {milestone.title}{milestone.owner ? ` · ${milestone.owner}` : ''}</span></span><select value={milestone.status} onChange={event => setMilestonesDraft(current => current.map(item => item.id === milestone.id ? { ...item, status: event.target.value as typeof item.status } : item))} style={{ border:'1px solid #D8DEE9', borderRadius:6, padding:'5px', color:'#475467', background:'#FFFFFF', fontSize:11 }}><option value="UPCOMING">Upcoming</option><option value="ON_TRACK">On track</option><option value="AT_RISK">At risk</option><option value="COMPLETED">Completed</option></select><button type="button" onClick={() => setMilestonesDraft(current => current.filter(item => item.id !== milestone.id))} style={{ border:'none', background:'transparent', color:'#B91C1C', cursor:'pointer', fontSize:11, fontWeight:700 }}>Remove</button></div>) : <p style={{ margin:'10px 0 0', color:'#98A2B3', fontSize:11 }}>ยังไม่มี Milestone</p>}</div>
+            </div>
+          </div>
+          {settingsError && <p style={{ margin:'16px 0 0', color:'#B91C1C', fontSize:12 }}>{settingsError}</p>}
+          <div style={{ display:'flex', justifyContent:'end', gap:8, marginTop:22 }}><button type="button" onClick={() => setShowProjectSettings(false)} style={{ border:'1px solid #D8DEE9', borderRadius:8, padding:'9px 14px', cursor:'pointer', background:'#FFFFFF', color:'#475467', fontSize:12, fontWeight:700 }}>Cancel</button><button type="button" onClick={saveProjectSettings} style={{ border:'none', borderRadius:8, padding:'9px 14px', cursor:'pointer', background:'linear-gradient(135deg,#335CFF,#6D5CE7)', color:'#FFFFFF', fontSize:12, fontWeight:800 }}>Save Schedule</button></div>
+        </section>
+      </div>
+    )}
     {showLineUpdate && activeProject && (
       <div style={{ position:'fixed', inset:0, zIndex:50, background:'rgba(15,23,42,.38)', display:'grid', placeItems:'center', padding:20 }}>
         <section role="dialog" aria-modal="true" aria-labelledby="line-update-title" style={{ width:'min(440px, 100%)', background:'#FFFFFF', borderRadius:16, padding:24, boxShadow:'0 24px 64px rgba(15,23,42,.26)' }}>
@@ -225,11 +317,11 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
 }
 
 // ── Sidebar ───────────────────────────────────────────────────────
-function Sidebar({ view, onViewChange }: { view: 'office'|'board'; onViewChange: (v:'office'|'board')=>void }) {
+function Sidebar({ view, onViewChange }: { view: 'office'|'board'|'timeline'; onViewChange: (v:'office'|'board'|'timeline')=>void }) {
   const navItems = [
     { icon:'▦', label:'Project Overview', key:'office' as const },
     { icon:'☰', label:'Task Board',     key:'board'  as const },
-    { icon:'◫', label:'Timeline',       key:null },
+    { icon:'◫', label:'Timeline',       key:'timeline' as const },
   ]
   const bottomItems = [{ icon:'◎', label:'Team' }, { icon:'⊞', label:'Reports' }]
   return (
@@ -478,7 +570,7 @@ function SectionTitle({ children, color, icon }: { children: React.ReactNode; co
 
 // ── Root ──────────────────────────────────────────────────────────
 export default function AIDigitalOffice() {
-  const [view, setView] = React.useState<'office' | 'board'>('office')
+  const [view, setView] = React.useState<'office' | 'board' | 'timeline'>('office')
   const [showHub, setShowHub] = React.useState(true)
 
   if (showHub) {
@@ -512,6 +604,8 @@ export default function AIDigitalOffice() {
           <div style={{ display:'flex', flex:1, overflow:'hidden' }}>
             {view === 'board' ? (
               <TaskBoard />
+            ) : view === 'timeline' ? (
+              <ProjectTimeline />
             ) : (
               <>
                 <ProjectOverviewDashboard />
