@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { formatIntelligenceLines, getProjectIntelligence } from '@/lib/projectIntelligence'
 import {
   MOCK_BITLOCKER_PROJECT,
   MOCK_DIGITAL_OFFICE_PROJECT,
@@ -23,44 +24,18 @@ export async function POST(request: NextRequest) {
   }
 
   const tasks = MOCK_TASKS.filter(task => task.projectId === project.id)
-  const count = (status: string) => tasks.filter(task => task.status === status).length
-  const metricTotal = project.metrics?.reduce((total, metric) => total + metric.total, 0) ?? 0
-  const metricCompleted = project.metrics?.reduce((total, metric) => total + metric.completed, 0) ?? 0
-  const progress = metricTotal
-    ? Number(((metricCompleted / metricTotal) * 100).toFixed(2))
-    : tasks.length
-      ? Math.round(tasks.reduce((total, task) => total + task.progress, 0) / tasks.length)
-      : 0
+  const intelligence = getProjectIntelligence(project, tasks)
   const date = new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date())
-  const attentionTasks = tasks.filter(task => task.status === 'BLOCKED' || task.status === 'AT_RISK')
-  const lowestMetric = project.metrics?.reduce((lowest, metric) => metric.completed / metric.total < lowest.completed / lowest.total ? metric : lowest)
   const aiSummary = [
-    'สวัสดีครับ ผมคือ AI Agent ผู้ช่วยสำหรับการบริหารโปรเจคของคุณ',
-    attentionTasks.length
-      ? `พบ ${attentionTasks.length} งานที่ต้องติดตามเป็นพิเศษ: ${attentionTasks.slice(0, 2).map(task => task.title).join(', ')}`
-      : 'ไม่พบงาน Blocked หรือ At Risk ในขณะนี้',
-    lowestMetric
-      ? `${lowestMetric.label} มีความคืบหน้า ${((lowestMetric.completed / lowestMetric.total) * 100).toFixed(2)}% (${lowestMetric.completed.toLocaleString()} / ${lowestMetric.total.toLocaleString()} ${lowestMetric.unit ?? 'เครื่อง'})${lowestMetric.detail ? ` — ${lowestMetric.detail}` : ''}`
-      : `มีงานกำลังดำเนินการ ${count('IN_PROGRESS')} งาน จากทั้งหมด ${tasks.length} งาน`,
-    attentionTasks.length
-      ? 'แนะนำให้ติดตาม owner ของงานที่มีความเสี่ยงก่อน เพื่อป้องกันผลกระทบต่อแผนงาน'
-      : progress >= 95
-        ? 'โครงการใกล้เสร็จสมบูรณ์ แนะนำติดตามงานคงเหลือเพื่อปิดโครงการตามแผน'
-        : 'ภาพรวมยังเป็นไปตามแผน แนะนำติดตามความคืบหน้าของงานที่กำลังดำเนินการอย่างต่อเนื่อง',
+    intelligence.attentionTasks.length ? `ติดตาม ${intelligence.attentionTasks.length} งานที่มีความเสี่ยง: ${intelligence.attentionTasks.slice(0, 2).map(task => task.title).join(', ')}` : 'ไม่พบงาน Blocked หรือ At Risk ในขณะนี้',
+    intelligence.scheduleDelta < -5 ? 'ความคืบหน้างานต่ำกว่าแผน ควรทบทวนงานบน critical path และเร่งปิด blocker' : intelligence.workloadAlerts.length ? 'พบ resource ใกล้หรือเกิน capacity ควรพิจารณากระจายงานก่อนกระทบกำหนดส่ง' : 'ติดตามงานที่กำลังดำเนินการและ milestone ถัดไปอย่างต่อเนื่อง',
   ]
 
   const text = [
     `📊 Project Update — ${project.name}`,
     `วันที่ ${date}`,
     '',
-    `Overall progress: ${progress}%${metricTotal ? ` (${metricCompleted.toLocaleString()} / ${metricTotal.toLocaleString()} total units)` : ''}`,
-    ...(project.metrics?.map(metric => {
-      const metricProgress = ((metric.completed / metric.total) * 100).toFixed(2)
-      return `• ${metric.label}: ${metric.completed.toLocaleString()} / ${metric.total.toLocaleString()} ${metric.unit ?? 'เครื่อง'} (${metricProgress}%)${metric.detail ? ` — ${metric.detail}` : ''}`
-    }) ?? []),
-    '',
-    `✅ Done: ${count('DONE')} | 🔵 In progress: ${count('IN_PROGRESS')}`,
-    `⚠️ At risk: ${count('AT_RISK')} | 🔴 Blocked: ${count('BLOCKED')} | ⏳ To do: ${count('TODO')}`,
+    ...formatIntelligenceLines(project, intelligence),
     '',
     '🤖 AI Summary:',
     ...aiSummary.map(item => `• ${item}`),

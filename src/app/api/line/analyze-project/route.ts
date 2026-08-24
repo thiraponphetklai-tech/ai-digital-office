@@ -1,5 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
+import { formatIntelligenceLines, getProjectIntelligence } from '@/lib/projectIntelligence'
 import {
   MOCK_BITLOCKER_PROJECT,
   MOCK_DIGITAL_OFFICE_PROJECT,
@@ -32,18 +33,17 @@ export async function POST(request: NextRequest) {
   const date = new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date())
   const messages = selectedProjects.map(project => {
     const tasks = MOCK_TASKS.filter(task => task.projectId === project.id)
-    const count = (status: string) => tasks.filter(task => task.status === status).length
-    const metricTotal = project.metrics?.reduce((total, metric) => total + metric.total, 0) ?? 0
-    const metricCompleted = project.metrics?.reduce((total, metric) => total + metric.completed, 0) ?? 0
-    const progress = metricTotal ? Number(((metricCompleted / metricTotal) * 100).toFixed(2)) : tasks.length ? Math.round(tasks.reduce((total, task) => total + task.progress, 0) / tasks.length) : 0
-    const attention = tasks.filter(task => task.status === 'BLOCKED' || task.status === 'AT_RISK')
-    const activeWork = tasks.filter(task => task.status === 'IN_PROGRESS')
-    const followUps = [...attention, ...activeWork].slice(0, 3)
-    const recommendation = attention.length
-      ? `ติดตาม owner ของ ${attention.length} งานที่มีความเสี่ยงหรือถูก Blocked ก่อน เพื่อป้องกันผลกระทบต่อกำหนดส่ง`
-      : activeWork.length
-        ? `ติดตามความคืบหน้าของ ${activeWork.length} งานที่กำลังดำเนินการ และเตรียมปิดงานที่ใกล้เสร็จ`
-        : 'โครงการอยู่ในสถานะปกติ ให้ตรวจสอบงาน To do และกำหนด owner สำหรับขั้นตอนถัดไป'
+    const intelligence = getProjectIntelligence(project, tasks)
+    const followUps = [...intelligence.attentionTasks, ...tasks.filter(task => task.status === 'IN_PROGRESS')].slice(0, 3)
+    const recommendation = intelligence.overdueMilestones.length
+      ? 'มี milestone เกินกำหนด ควรทบทวนแผนและกำหนด owner สำหรับ recovery plan ทันที'
+      : intelligence.scheduleDelta < -5
+        ? 'ความคืบหน้างานต่ำกว่า schedule ควรเร่งงานที่มี dependency และขจัด blocker บน critical path'
+        : intelligence.workloadAlerts.length
+          ? 'มี resource ใกล้หรือเกิน capacity ควรปรับการมอบหมายงานก่อนกระทบแผน'
+          : intelligence.attentionTasks.length
+            ? `ติดตาม owner ของ ${intelligence.attentionTasks.length} งานที่มีความเสี่ยงหรือถูก Blocked ก่อน เพื่อป้องกันผลกระทบต่อกำหนดส่ง`
+            : 'โครงการอยู่ในสถานะปกติ ให้ติดตาม milestone ถัดไปและงานกำลังดำเนินการอย่างต่อเนื่อง'
 
     return {
       type: 'text' as const,
@@ -51,13 +51,7 @@ export async function POST(request: NextRequest) {
         `📊 AI Project Analysis — ${project.name}`,
         `วันที่ ${date}`,
         '',
-        `Overall progress: ${progress}%${metricTotal ? ` (${metricCompleted.toLocaleString()} / ${metricTotal.toLocaleString()} total units)` : ''}`, 
-        ...(project.metrics?.map(metric => {
-          const metricProgress = ((metric.completed / metric.total) * 100).toFixed(2)
-          return `• ${metric.label}: ${metric.completed.toLocaleString()} / ${metric.total.toLocaleString()} ${metric.unit ?? 'เครื่อง'} (${metricProgress}%)${metric.detail ? ` — ${metric.detail}` : ''}`
-        }) ?? []),
-        `✅ Done: ${count('DONE')} | 🔵 In progress: ${count('IN_PROGRESS')}`,
-        `⚠️ At risk: ${count('AT_RISK')} | 🔴 Blocked: ${count('BLOCKED')} | ⏳ To do: ${count('TODO')}`, 
+        ...formatIntelligenceLines(project, intelligence),
         '',
         followUps.length ? 'งานที่ควรติดตาม:' : 'สถานะการติดตาม:',
         ...(followUps.length ? followUps.map(task => `• ${task.title} — ${task.blocker || task.description || task.status}`) : ['• ไม่มีงาน Blocked หรือ At Risk ในขณะนี้']),
