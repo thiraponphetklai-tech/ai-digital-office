@@ -28,6 +28,11 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
   const [progress, setProgress] = useState(task.progress)
   const [blocker,  setBlocker]  = useState(task.blocker ?? '')
   const [showBlockerInput, setShowBlockerInput] = useState(false)
+  const [plannedStartDate, setPlannedStartDate] = useState(task.plannedStartDate ?? '')
+  const [plannedEndDate, setPlannedEndDate] = useState(task.plannedEndDate ?? task.dueDate ?? '')
+  const [estimatedHours, setEstimatedHours] = useState(task.estimatedHours?.toString() ?? '')
+  const [actualHours, setActualHours] = useState(task.actualHours?.toString() ?? '')
+  const [planningError, setPlanningError] = useState('')
 
   function handleStatusChange(status: TaskStatus) {
     updateTaskStatus(task.id, status)
@@ -47,6 +52,21 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
   function toggleAssignee(resourceId: string) {
     const nextAssigneeIds = assigneeIds.includes(resourceId) ? assigneeIds.filter(id => id !== resourceId) : [...assigneeIds, resourceId]
     updateTaskDetails(task.id, { assigneeIds: nextAssigneeIds, ownerId: nextAssigneeIds[0] ?? task.ownerId })
+  }
+
+  function savePlanning() {
+    const estimated = estimatedHours === '' ? undefined : Number(estimatedHours)
+    const actual = actualHours === '' ? undefined : Number(actualHours)
+    if (plannedStartDate && plannedEndDate && plannedEndDate < plannedStartDate) {
+      setPlanningError('Planned end ต้องไม่ก่อน Planned start')
+      return
+    }
+    if ((estimated !== undefined && (!Number.isFinite(estimated) || estimated < 0)) || (actual !== undefined && (!Number.isFinite(actual) || actual < 0))) {
+      setPlanningError('จำนวนชั่วโมงต้องเป็น 0 หรือมากกว่า')
+      return
+    }
+    updateTaskDetails(task.id, { plannedStartDate: plannedStartDate || undefined, plannedEndDate: plannedEndDate || undefined, estimatedHours: estimated, actualHours: actual })
+    setPlanningError('')
   }
 
   const daysLeft = task.dueDate
@@ -171,6 +191,17 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
             </div>
           </Section>
 
+          <Section title="Planning">
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:9 }}>
+              <label style={planningLabel}>Planned start<input type="date" value={plannedStartDate} onChange={event => setPlannedStartDate(event.target.value)} style={planningInput} /></label>
+              <label style={planningLabel}>Planned end<input type="date" min={plannedStartDate || undefined} value={plannedEndDate} onChange={event => setPlannedEndDate(event.target.value)} style={planningInput} /></label>
+              <label style={planningLabel}>Estimated hours<input type="number" min="0" step="0.5" value={estimatedHours} onChange={event => setEstimatedHours(event.target.value)} placeholder="e.g. 16" style={planningInput} /></label>
+              <label style={planningLabel}>Actual hours<input type="number" min="0" step="0.5" value={actualHours} onChange={event => setActualHours(event.target.value)} placeholder="e.g. 8" style={planningInput} /></label>
+            </div>
+            {planningError && <p style={{ margin:'8px 0 0', color:'#B91C1C', fontSize:11 }}>{planningError}</p>}
+            <button type="button" onClick={savePlanning} style={{ marginTop:10, padding:'6px 11px', border:'1px solid #BFDBFE', borderRadius:7, cursor:'pointer', background:'#EFF6FF', color:'#2563EB', fontSize:11, fontWeight:700 }}>Save planning</button>
+          </Section>
+
           <Section title="Assigned players">
             {availableResources.length ? <div style={{ display:'flex', flexDirection:'column', gap:7 }}>{availableResources.map(resource => <label key={resource.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', border:'1px solid #E5EAF2', borderRadius:8, cursor:'pointer', background:assigneeIds.includes(resource.id) ? '#EEF2FF' : '#FFFFFF' }}><input type="checkbox" checked={assigneeIds.includes(resource.id)} onChange={() => toggleAssignee(resource.id)} /><span style={{ flex:1, fontSize:12, color:'#344054', fontWeight:700 }}>{resource.name}</span><span style={{ fontSize:10, color:resource.type === 'VENDOR' ? '#7C3AED' : '#2563EB', fontWeight:800 }}>{resource.type === 'VENDOR' ? 'VENDOR' : 'EMPLOYEE'}</span><span style={{ fontSize:10, color:'#98A2B3' }}>{resource.role}</span></label>)}</div> : <p style={{ margin:0, color:'#98A2B3', fontSize:12 }}>เพิ่ม Player ใน Project Settings ก่อน</p>}
           </Section>
@@ -244,6 +275,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </div>
   )
 }
+
+const planningLabel = { display:'flex', flexDirection:'column', gap:5, color:'#667085', fontSize:11, fontWeight:700 } as const
+const planningInput = { width:'100%', border:'1px solid #D8DEE9', borderRadius:7, padding:'7px 8px', color:'#344054', background:'#FFFFFF', fontSize:12, outline:'none' } as const
 
 function MetaRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
   return (

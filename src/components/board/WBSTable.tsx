@@ -130,7 +130,7 @@ export function WBSTable() {
       {/* Table */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
         <div style={{ background: '#FFFFFF', border: '1px solid #E5EAF2', borderRadius: 12, overflowX: 'auto' }}>
-          <table style={{ width: '100%', minWidth: 1180, borderCollapse: 'collapse', fontSize: 12 }}>
+          <table style={{ width: '100%', minWidth: 1330, borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E5EAF2' }}>
                 <Th width={32} />
@@ -141,6 +141,7 @@ export function WBSTable() {
                 <Th label="Priority" sortKey="priority" current={sortKey} asc={sortAsc} onSort={toggleSort} width={95} />
                 <Th label="Owner" sortKey="ownerId" current={sortKey} asc={sortAsc} onSort={toggleSort} width={80} />
                 <Th label="Progress" sortKey="progress" current={sortKey} asc={sortAsc} onSort={toggleSort} width={140} />
+                <Th label="Planning" width={150} />
                 <Th label="Due Date" sortKey="dueDate" current={sortKey} asc={sortAsc} onSort={toggleSort} width={110} />
                 <Th label="Risk" width={80} />
               </tr>
@@ -276,6 +277,11 @@ export function WBSTable() {
                         )}
                       </td>
 
+                      {/* Planning */}
+                      <td style={{ padding: '10px 8px', width: 150, color:'#667085', fontSize:10, lineHeight:1.45 }}>
+                        {task.plannedStartDate || task.plannedEndDate ? <><div>{task.plannedStartDate ? new Date(task.plannedStartDate).toLocaleDateString('th-TH', { day:'numeric', month:'short' }) : '—'} → {task.plannedEndDate ? new Date(task.plannedEndDate).toLocaleDateString('th-TH', { day:'numeric', month:'short' }) : '—'}</div><strong style={{ color:'#4F46E5' }}>{task.estimatedHours ?? 0}h est. · {task.actualHours ?? 0}h actual</strong></> : <span style={{ color:'#CBD5E1' }}>Not planned</span>}
+                      </td>
+
                       {/* Due date */}
                       <td style={{ padding: '10px 8px', width: 110 }}>
                         {task.dueDate ? (
@@ -308,7 +314,7 @@ export function WBSTable() {
                     {/* Expanded detail row */}
                     {exp && (
                       <tr style={{ background: '#FAFBFD', borderBottom: '1px solid #F1F5F9' }}>
-                        <td colSpan={10} style={{ padding: '8px 48px 12px' }}>
+                        <td colSpan={11} style={{ padding: '8px 48px 12px' }}>
                           <div style={{ display: 'flex', gap: 20 }}>
                             {task.aiRiskAssessment && (
                               <div style={{

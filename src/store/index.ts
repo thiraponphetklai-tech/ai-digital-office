@@ -33,7 +33,7 @@ interface TaskStore {
   updateTaskStatus:   (taskId: string, status: TaskStatus) => void
   updateTaskProgress: (taskId: string, progress: number) => void
   setTaskBlocker:     (taskId: string, blocker: string) => void
-  updateTaskDetails:  (taskId: string, updates: Partial<Pick<Task, 'title' | 'description' | 'ownerId' | 'assigneeIds' | 'teamId' | 'priority' | 'dueDate'>>) => void
+  updateTaskDetails:  (taskId: string, updates: Partial<Pick<Task, 'title' | 'description' | 'ownerId' | 'assigneeIds' | 'teamId' | 'priority' | 'plannedStartDate' | 'plannedEndDate' | 'estimatedHours' | 'actualHours' | 'dueDate'>>) => void
   addTask:            (task: Task) => void
   getTask:            (taskId: string) => Task | undefined
 }
@@ -177,7 +177,7 @@ export const useTaskStore = create<TaskStore>()(persist((set, get) => ({
   getTask: (taskId) => get().tasks.find(t => t.id === taskId),
 }), {
   name: 'ai-digital-office-tasks',
-  version: 4,
+  version: 5,
   partialize: state => ({ tasks: state.tasks, stats: state.stats }),
   migrate: persisted => {
     const state = persisted as Partial<TaskStore>

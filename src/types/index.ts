@@ -20,7 +20,11 @@ export interface Task {
   status: TaskStatus
   priority: TaskPriority
   progress: number          // 0-100
-  startDate?: string        // ISO date
+  startDate?: string        // legacy / actual start date (ISO date)
+  plannedStartDate?: string // ISO date
+  plannedEndDate?: string   // ISO date
+  estimatedHours?: number
+  actualHours?: number
   dueDate?: string          // ISO date
   blocker?: string          // description of blocker
   dependency?: string[]     // task ids this depends on
