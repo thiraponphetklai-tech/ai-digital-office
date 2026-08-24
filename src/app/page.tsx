@@ -12,6 +12,7 @@ import { TaskBoard } from '@/components/board/TaskBoard'
 import { ProjectOverviewDashboard } from '@/components/ProjectOverviewDashboard'
 import { ProjectTimeline } from '@/components/ProjectTimeline'
 import { ProjectResourcesDialog } from '@/components/ProjectResourcesDialog'
+import { ResourceWorkloadView } from '@/components/ResourceWorkloadView'
 
 // OfficeScene ใช้ Three.js — ต้อง dynamic import (ไม่รัน SSR)
 const OfficeScene = dynamic(
@@ -325,13 +326,13 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
 }
 
 // ── Sidebar ───────────────────────────────────────────────────────
-function Sidebar({ view, onViewChange }: { view: 'office'|'board'|'timeline'; onViewChange: (v:'office'|'board'|'timeline')=>void }) {
+function Sidebar({ view, onViewChange }: { view: 'office'|'board'|'timeline'|'resources'; onViewChange: (v:'office'|'board'|'timeline'|'resources')=>void }) {
   const navItems = [
     { icon:'▦', label:'Project Overview', key:'office' as const },
     { icon:'☰', label:'Task Board',     key:'board'  as const },
     { icon:'◫', label:'Timeline',       key:'timeline' as const },
   ]
-  const bottomItems = [{ icon:'◎', label:'Team' }, { icon:'⊞', label:'Reports' }]
+  const bottomItems = [{ icon:'◎', label:'Resource Workload', key:'resources' as const }, { icon:'⊞', label:'Reports', key:null }]
   return (
     <nav style={{
       width:58, background:T.surface,
@@ -358,9 +359,9 @@ function Sidebar({ view, onViewChange }: { view: 'office'|'board'|'timeline'; on
       }}>▦</a>
       <div style={{ width:28, height:1, background:T.border, margin:'6px 0' }} />
       {bottomItems.map(item => (
-        <button key={item.label} title={item.label} style={{
-          width:40, height:40, borderRadius:10, background:'transparent',
-          color:T.textMuted, border:'none', cursor:'pointer', fontSize:17,
+        <button key={item.label} title={item.label} onClick={() => item.key && onViewChange(item.key)} style={{
+          width:40, height:40, borderRadius:10, background:item.key === view ? T.indigo : 'transparent',
+          color:item.key === view ? '#FFFFFF' : T.textMuted, border:'none', cursor:item.key ? 'pointer' : 'default', fontSize:17,
           display:'flex', alignItems:'center', justifyContent:'center',
         }}>{item.icon}</button>
       ))}
@@ -578,7 +579,7 @@ function SectionTitle({ children, color, icon }: { children: React.ReactNode; co
 
 // ── Root ──────────────────────────────────────────────────────────
 export default function AIDigitalOffice() {
-  const [view, setView] = React.useState<'office' | 'board' | 'timeline'>('office')
+  const [view, setView] = React.useState<'office' | 'board' | 'timeline' | 'resources'>('office')
   const [showHub, setShowHub] = React.useState(true)
 
   if (showHub) {
@@ -614,6 +615,8 @@ export default function AIDigitalOffice() {
               <TaskBoard />
             ) : view === 'timeline' ? (
               <ProjectTimeline />
+            ) : view === 'resources' ? (
+              <ResourceWorkloadView />
             ) : (
               <>
                 <ProjectOverviewDashboard />
