@@ -177,7 +177,7 @@ export const useTaskStore = create<TaskStore>()(persist((set, get) => ({
   getTask: (taskId) => get().tasks.find(t => t.id === taskId),
 }), {
   name: 'ai-digital-office-tasks',
-  version: 5,
+  version: 7,
   partialize: state => ({ tasks: state.tasks, stats: state.stats }),
   migrate: persisted => {
     const state = persisted as Partial<TaskStore>
@@ -201,17 +201,31 @@ interface ResourceStore {
 
 export const useResourceStore = create<ResourceStore>()(persist(set => ({
   resources: [
-    { id: 'u1', name: 'Somchai', type: 'EMPLOYEE', role: 'Endpoint Engineer', skills: ['BitLocker', 'Endpoint'], capacityHoursPerDay: 8, active: true },
-    { id: 'u2', name: 'Nida', type: 'EMPLOYEE', role: 'M365 Engineer', skills: ['M365', 'Intune'], capacityHoursPerDay: 8, active: true },
-    { id: 'u4', name: 'Krit', type: 'EMPLOYEE', role: 'Team Lead', skills: ['Migration', 'Security'], capacityHoursPerDay: 8, active: true },
-    { id: 'u5', name: 'Manager', type: 'EMPLOYEE', role: 'Project Manager', skills: ['Project Management'], capacityHoursPerDay: 8, active: true },
-    { id: 'vendor-abc', name: 'ABC Support Team', type: 'VENDOR', role: 'Deployment Support', company: 'ABC Technology', skills: ['Field Support'], capacityHoursPerDay: 8, active: true },
+    { id: 'u1', name: 'เบ้น', type: 'EMPLOYEE', role: 'Engineer', capacityHoursPerDay: 8, active: true },
+    { id: 'u2', name: 'เบล', type: 'EMPLOYEE', role: 'Engineer', capacityHoursPerDay: 8, active: true },
+    { id: 'u3', name: 'บอย', type: 'EMPLOYEE', role: 'Engineer', capacityHoursPerDay: 8, active: true },
+    { id: 'u4', name: 'แกท', type: 'EMPLOYEE', role: 'Engineer', capacityHoursPerDay: 8, active: true },
+    { id: 'u5', name: 'ออฟ', type: 'EMPLOYEE', role: 'Engineer', capacityHoursPerDay: 8, active: true },
+    { id: 'u6', name: 'นัน', type: 'EMPLOYEE', role: 'Project Manager', capacityHoursPerDay: 8, active: true },
   ],
   addResource: (resource) => set(state => ({ resources: [...state.resources, resource] })),
 }), {
   name: 'ai-digital-office-resources',
-  version: 1,
+  version: 2,
   partialize: state => ({ resources: state.resources }),
+  migrate: persisted => {
+    const state = persisted as Partial<ResourceStore>
+    const playerIds = new Set(['u1', 'u2', 'u3', 'u4', 'u5', 'u6', 'vendor-abc'])
+    const players: Resource[] = [
+      { id: 'u1', name: 'เบ้น', type: 'EMPLOYEE', role: 'Engineer', capacityHoursPerDay: 8, active: true },
+      { id: 'u2', name: 'เบล', type: 'EMPLOYEE', role: 'Engineer', capacityHoursPerDay: 8, active: true },
+      { id: 'u3', name: 'บอย', type: 'EMPLOYEE', role: 'Engineer', capacityHoursPerDay: 8, active: true },
+      { id: 'u4', name: 'แกท', type: 'EMPLOYEE', role: 'Engineer', capacityHoursPerDay: 8, active: true },
+      { id: 'u5', name: 'ออฟ', type: 'EMPLOYEE', role: 'Engineer', capacityHoursPerDay: 8, active: true },
+      { id: 'u6', name: 'นัน', type: 'EMPLOYEE', role: 'Project Manager', capacityHoursPerDay: 8, active: true },
+    ]
+    return { ...state, resources: [...(state.resources ?? []).filter(resource => !playerIds.has(resource.id)), ...players] } as ResourceStore
+  },
 }))
 
 // ── 3. PROJECT STORE ─────────────────────────────────────────────
@@ -230,7 +244,7 @@ export const useProjectStore = create<ProjectStore>()(persist(set => ({
   })),
 }), {
   name: 'ai-digital-office-projects',
-  version: 7,
+  version: 11,
   partialize: state => ({ projects: state.projects }),
   migrate: persisted => {
     const state = persisted as Partial<ProjectStore>
@@ -239,7 +253,7 @@ export const useProjectStore = create<ProjectStore>()(persist(set => ({
       .filter(project => project.id !== 'phoenix' && project.name !== 'M365 Migration Tasks')
       .map(project => {
         const seed = seedProjects.find(item => item.id === project.id)
-        return seed ? { ...seed, ...project, resourceIds: project.resourceIds ?? seed.resourceIds } : project
+        return seed ? { ...seed, ...project, metrics: seed.metrics, resourceIds: seed.resourceIds, memberIds: seed.memberIds } : project
       })
     const missingSeedProjects = seedProjects.filter(seed => !retainedProjects.some(project => project.id === seed.id))
     return { ...state, projects: [...retainedProjects, ...missingSeedProjects] } as ProjectStore
