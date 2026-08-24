@@ -28,6 +28,7 @@ export function ProjectHub({ onOpenWorkspace }: ProjectHubProps) {
   const [description, setDescription] = useState('')
   const [startDate, setStartDate] = useState(today())
   const [targetDate, setTargetDate] = useState(addMonths(3))
+  const [lineUpdateProject, setLineUpdateProject] = useState<Project | null>(null)
 
   const filteredProjects = projects.filter(project =>
     `${project.name} ${project.code ?? ''}`.toLowerCase().includes(query.toLowerCase())
@@ -98,7 +99,10 @@ export function ProjectHub({ onOpenWorkspace }: ProjectHubProps) {
                   <span><strong style={{ color: '#059669' }}>{completed}</strong> completed</span>
                 </div>
                 <div style={{ fontSize: 10, color: '#98A2B3', marginTop: 8 }}>Target: {new Date(project.targetDate).toLocaleDateString('th-TH')}</div>
-                <button onClick={() => openProject(project.id)} style={{ ...primaryButtonStyle, width: '100%', marginTop: 16 }}>Open Workspace →</button>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 16 }}>
+                  <button onClick={() => openProject(project.id)} style={{ ...primaryButtonStyle, width: '100%' }}>Open Workspace →</button>
+                  <button onClick={() => setLineUpdateProject(project)} style={{ ...secondaryButtonStyle, width: '100%', color: '#047857', borderColor: '#A7F3D0' }}>Update LINE</button>
+                </div>
               </article>
             )
           })}
@@ -108,6 +112,30 @@ export function ProjectHub({ onOpenWorkspace }: ProjectHubProps) {
       </section>
 
       {showCsvImporter && <CsvProjectImporter onClose={() => setShowCsvImporter(false)} onImported={() => { setShowCsvImporter(false); onOpenWorkspace() }} />}
+
+      {lineUpdateProject && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(15,23,42,.38)', display: 'grid', placeItems: 'center', padding: 20 }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="line-update-title" style={{ width: 'min(440px, 100%)', background: '#FFFFFF', borderRadius: 16, padding: 24, boxShadow: '0 24px 64px rgba(15,23,42,.26)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', color: '#059669' }}>LINE UPDATE</div>
+                <h2 id="line-update-title" style={{ margin: '7px 0 8px', fontSize: 20 }}>Send project update?</h2>
+              </div>
+              <button type="button" onClick={() => setLineUpdateProject(null)} aria-label="Close" style={closeButtonStyle}>×</button>
+            </div>
+            <p style={{ margin: '0 0 12px', color: '#475467', fontSize: 13, lineHeight: 1.6 }}>จะส่งรายงานความคืบหน้าล่าสุดของโครงการนี้ไปยัง LINE Group กลาง (Mock)</p>
+            <div style={{ padding: '12px 14px', borderRadius: 10, background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+              <strong style={{ display: 'block', color: '#166534', fontSize: 14 }}>{lineUpdateProject.name}</strong>
+              <span style={{ color: '#15803D', fontSize: 11 }}>{lineUpdateProject.code ?? lineUpdateProject.id}</span>
+            </div>
+            <p style={{ margin: '14px 0 0', color: '#98A2B3', fontSize: 11, lineHeight: 1.5 }}>ขั้นตอนนี้เป็น UI mock เท่านั้น ยังไม่มีการส่งข้อความไป LINE จริง</p>
+            <div style={{ display: 'flex', justifyContent: 'end', gap: 8, marginTop: 22 }}>
+              <button type="button" onClick={() => setLineUpdateProject(null)} style={secondaryButtonStyle}>Cancel</button>
+              <button type="button" onClick={() => setLineUpdateProject(null)} style={{ ...primaryButtonStyle, background: 'linear-gradient(135deg,#059669,#16A34A)' }}>Send Update</button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {showSetup && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(15,23,42,.38)', display: 'grid', placeItems: 'center', padding: 20 }}>
