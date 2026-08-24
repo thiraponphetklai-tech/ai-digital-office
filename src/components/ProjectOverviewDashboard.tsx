@@ -21,7 +21,9 @@ export function ProjectOverviewDashboard() {
   const done = projectTasks.filter(task => task.status === 'DONE').length
   const working = projectTasks.filter(task => task.status === 'IN_PROGRESS').length
   const attention = projectTasks.filter(task => task.status === 'AT_RISK' || task.status === 'BLOCKED')
-  const progress = projectTasks.length ? Math.round(projectTasks.reduce((sum, task) => sum + task.progress, 0) / projectTasks.length) : 0
+  const metricTotal = project?.metrics?.reduce((sum, metric) => sum + metric.total, 0) ?? 0
+  const metricCompleted = project?.metrics?.reduce((sum, metric) => sum + metric.completed, 0) ?? 0
+  const progress = metricTotal ? Number(((metricCompleted / metricTotal) * 100).toFixed(2)) : projectTasks.length ? Math.round(projectTasks.reduce((sum, task) => sum + task.progress, 0) / projectTasks.length) : 0
   const workstreams = [...new Set(projectTasks.map(task => task.teamId || 'general'))].map(teamId => {
     const teamTasks = projectTasks.filter(task => (task.teamId || 'general') === teamId)
     return {
@@ -55,6 +57,7 @@ export function ProjectOverviewDashboard() {
           <div style={{ minWidth: 250, color: '#FFFFFF', background: 'linear-gradient(135deg,#4F46E5,#7C3AED)', borderRadius: 16, padding: '16px 18px', boxShadow: '0 8px 20px rgba(79,70,229,.24)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', marginBottom: 10 }}><span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em' }}>OVERALL PROJECT</span><strong style={{ fontSize: 36, lineHeight: .9 }}>{progress}%</strong></div>
             <div style={{ height: 9, background: 'rgba(255,255,255,.26)', borderRadius: 5, overflow: 'hidden' }}><div style={{ width: `${progress}%`, height: '100%', background: '#FFFFFF', borderRadius: 5 }} /></div>
+            {metricTotal > 0 && <div style={{ marginTop: 8, fontSize: 11, opacity: .9 }}>{metricCompleted.toLocaleString()} / {metricTotal.toLocaleString()} units</div>}
           </div>
         </div>
       </section>
@@ -62,6 +65,8 @@ export function ProjectOverviewDashboard() {
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))', gap: 12, marginBottom: 12 }}>
         {kpis.map(kpi => <div key={kpi.label} style={{ background: kpi.background, borderRadius: 12, padding: '15px 16px', border: '1px solid #E5EAF2' }}><div style={{ fontSize: 28, fontWeight: 800, color: kpi.color }}>{kpi.value}</div><div style={{ fontSize: 11, fontWeight: 650, color: kpi.color }}>{kpi.label}</div></div>)}
       </section>
+
+      {project?.metrics?.length ? <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 12 }}>{project.metrics.map(metric => { const metricProgress = Number(((metric.completed / metric.total) * 100).toFixed(2)); return <div key={metric.label} style={{ padding: '13px 16px', borderRadius: 12, background: '#FFFFFF', border: '1px solid #DDE5F5' }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12 }}><strong>{metric.label}</strong><strong style={{ color: '#047857' }}>{metricProgress}%</strong></div><div style={{ margin: '7px 0', color: '#475467', fontSize: 12 }}>{metric.completed.toLocaleString()} / {metric.total.toLocaleString()} {metric.unit ?? 'เครื่อง'}</div><div style={{ height: 6, background: '#EAF6EF', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${metricProgress}%`, height: '100%', background: '#10B981' }} /></div>{metric.detail && <div style={{ marginTop: 8, color: '#667085', fontSize: 11 }}>{metric.detail}</div>}</div> })}</section> : null}
 
       <section style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 20, padding: '13px 16px', borderRadius: 12, background: '#FAF5FF', border: '1px solid #E9D5FF' }}>
         <span style={{ fontSize: 17 }}>🤖</span>

@@ -91,11 +91,20 @@ export interface Employee {
 
 // ─── Project ─────────────────────────────────────────────────────
 
+export interface ProjectMetric {
+  label: string
+  completed: number
+  total: number
+  unit?: string
+  detail?: string
+}
+
 export interface Project {
   id: string
   name: string
   code?: string
   description?: string
+  metrics?: ProjectMetric[]
   teamIds: string[]
   memberIds: string[]
   startDate: string

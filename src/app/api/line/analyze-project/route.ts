@@ -3,10 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import {
   MOCK_BITLOCKER_PROJECT,
   MOCK_DIGITAL_OFFICE_PROJECT,
+  MOCK_M365_MIGRATION_PROJECT,
   MOCK_TASKS,
 } from '@/data/mockData'
 
-const projects = [MOCK_BITLOCKER_PROJECT, MOCK_DIGITAL_OFFICE_PROJECT]
+const projects = [MOCK_BITLOCKER_PROJECT, MOCK_M365_MIGRATION_PROJECT, MOCK_DIGITAL_OFFICE_PROJECT]
 
 export async function POST(request: NextRequest) {
   if (request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -47,10 +48,10 @@ export async function POST(request: NextRequest) {
         `📊 AI Project Analysis — ${project.name}`,
         `วันที่ ${date}`,
         '',
-        `Overall progress: ${progress}%${metricTotal ? ` (${metricCompleted.toLocaleString()} / ${metricTotal.toLocaleString()} เครื่อง)` : ''}`,
+        `Overall progress: ${progress}%${metricTotal ? ` (${metricCompleted.toLocaleString()} / ${metricTotal.toLocaleString()} total units)` : ''}`, 
         ...(project.metrics?.map(metric => {
           const metricProgress = ((metric.completed / metric.total) * 100).toFixed(2)
-          return `• ${metric.label}: ${metric.completed.toLocaleString()} / ${metric.total.toLocaleString()} เครื่อง (${metricProgress}%)${metric.detail ? ` — ${metric.detail}` : ''}`
+          return `• ${metric.label}: ${metric.completed.toLocaleString()} / ${metric.total.toLocaleString()} ${metric.unit ?? 'เครื่อง'} (${metricProgress}%)${metric.detail ? ` — ${metric.detail}` : ''}`
         }) ?? []),
         `✅ Done: ${count('DONE')} | 🔵 In progress: ${count('IN_PROGRESS')}`,
         `⚠️ At risk: ${count('AT_RISK')} | 🔴 Blocked: ${count('BLOCKED')} | ⏳ To do: ${count('TODO')}`, 

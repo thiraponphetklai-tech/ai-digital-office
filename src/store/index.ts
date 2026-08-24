@@ -12,7 +12,7 @@ import type {
   OfficeZone, VisualState, ChatMessage, UserPrefs, ProjectStats,
 } from '@/types'
 import {
-  MOCK_DIGITAL_OFFICE_PROJECT, MOCK_BITLOCKER_PROJECT, MOCK_TASKS, MOCK_EVENTS, MOCK_ZONES,
+  MOCK_DIGITAL_OFFICE_PROJECT, MOCK_BITLOCKER_PROJECT, MOCK_M365_MIGRATION_PROJECT, MOCK_TASKS, MOCK_EVENTS, MOCK_ZONES,
   MOCK_MESSAGES, DEFAULT_USER_PREFS, AI_REPLIES,
 } from '@/data/mockData'
 
@@ -177,16 +177,17 @@ export const useTaskStore = create<TaskStore>()(persist((set, get) => ({
   getTask: (taskId) => get().tasks.find(t => t.id === taskId),
 }), {
   name: 'ai-digital-office-tasks',
-  version: 3,
+  version: 4,
   partialize: state => ({ tasks: state.tasks, stats: state.stats }),
   migrate: persisted => {
     const state = persisted as Partial<TaskStore>
-    const updatedTasks = (state.tasks ?? [])
-      .filter(task => task.projectId !== 'phoenix')
-      .map(task => {
-        const replacement = MOCK_TASKS.find(seed => seed.id === task.id && task.projectId === 'bitlocker-migration')
-        return replacement ?? task
-      })
+    const legacyM365ProjectIds = new Set(['m365-migration-tasks', 'm365-migration-project'])
+    const retainedTasks = (state.tasks ?? []).filter(task => task.projectId !== 'phoenix' && !legacyM365ProjectIds.has(task.projectId))
+    const refreshedTasks = retainedTasks.map(task => {
+      const replacement = MOCK_TASKS.find(seed => seed.id === task.id && task.projectId === 'bitlocker-migration')
+      return replacement ?? task
+    })
+    const updatedTasks = [...refreshedTasks, ...MOCK_TASKS.filter(task => task.projectId === 'm365-migration-project')]
     return { ...state, tasks: updatedTasks, stats: computeStats(updatedTasks) } as TaskStore
   },
 }))
@@ -199,20 +200,18 @@ interface ProjectStore {
 }
 
 export const useProjectStore = create<ProjectStore>()(persist(set => ({
-  projects: [MOCK_DIGITAL_OFFICE_PROJECT, MOCK_BITLOCKER_PROJECT],
+  projects: [MOCK_DIGITAL_OFFICE_PROJECT, MOCK_BITLOCKER_PROJECT, MOCK_M365_MIGRATION_PROJECT],
   addProject: (project) => set(state => ({ projects: [...state.projects, project] })),
 }), {
   name: 'ai-digital-office-projects',
-  version: 3,
+  version: 4,
   partialize: state => ({ projects: state.projects }),
   migrate: persisted => {
     const state = persisted as Partial<ProjectStore>
-    return {
-      ...state,
-      projects: (state.projects ?? [])
-        .filter(project => project.id !== 'phoenix')
-        .map(project => project.id === 'bitlocker-migration' ? MOCK_BITLOCKER_PROJECT : project),
-    } as ProjectStore
+    const retainedProjects = (state.projects ?? [])
+      .filter(project => project.id !== 'phoenix' && project.name !== 'M365 Migration Tasks' && project.id !== 'm365-migration-project')
+      .map(project => project.id === 'bitlocker-migration' ? MOCK_BITLOCKER_PROJECT : project)
+    return { ...state, projects: [...retainedProjects, MOCK_M365_MIGRATION_PROJECT] } as ProjectStore
   },
 }))
 
