@@ -93,7 +93,34 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
   const { projects } = useProjectStore()
   const { prefs, toggleDnd } = usePrefsStore()
   const [showLineUpdate, setShowLineUpdate] = React.useState(false)
+  const [lineUpdateState, setLineUpdateState] = React.useState<'idle' | 'sending' | 'sent' | 'failed'>('idle')
+  const [lineUpdateError, setLineUpdateError] = React.useState('')
   const activeProject = projects.find(project => project.id === prefs.activeProjectId)
+
+  async function sendLineUpdate() {
+    if (!activeProject) return
+    setLineUpdateState('sending')
+    setLineUpdateError('')
+    try {
+      const response = await fetch('/api/line/manual-project-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: activeProject.id }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || 'Unable to send the LINE update.')
+      setLineUpdateState('sent')
+    } catch (error) {
+      setLineUpdateError(error instanceof Error ? error.message : 'Unable to send the LINE update.')
+      setLineUpdateState('failed')
+    }
+  }
+
+  function openLineUpdate() {
+    setLineUpdateState('idle')
+    setLineUpdateError('')
+    setShowLineUpdate(true)
+  }
 
   return (
     <>
@@ -139,7 +166,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
         <span style={{ color:T.textMuted, fontSize:10 }}>▾</span>
       </div>
 
-      <button onClick={() => setShowLineUpdate(true)} disabled={!activeProject} style={{
+      <button onClick={openLineUpdate} disabled={!activeProject} style={{
         border:'1px solid #A7F3D0', borderRadius:8, padding:'6px 10px', background:'#F0FDF4', color:'#047857',
         cursor: activeProject ? 'pointer' : 'not-allowed', fontSize:11, fontWeight:700, opacity: activeProject ? 1 : .5,
       }}>Update LINE</button>
@@ -182,10 +209,13 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
           </div>
           <p style={{ margin:'0 0 12px', color:'#475467', fontSize:13, lineHeight:1.6 }}>จะส่งรายงานความคืบหน้าล่าสุดไปยัง LINE Group กลาง (Mock)</p>
           <div style={{ padding:'12px 14px', borderRadius:10, background:'#F0FDF4', border:'1px solid #BBF7D0' }}><strong style={{ display:'block', color:'#166534', fontSize:14 }}>{activeProject.name}</strong><span style={{ color:'#15803D', fontSize:11 }}>{activeProject.code ?? activeProject.id}</span></div>
-          <p style={{ margin:'14px 0 0', color:'#98A2B3', fontSize:11, lineHeight:1.5 }}>ขั้นตอนนี้เป็น UI mock เท่านั้น ยังไม่มีการส่งข้อความไป LINE จริง</p>
+          {lineUpdateState === 'idle' && <p style={{ margin:'14px 0 0', color:'#98A2B3', fontSize:11, lineHeight:1.5 }}>รายงานจะถูกส่งไปยัง LINE Group กลางที่ตั้งค่าไว้ในระบบ</p>}
+          {lineUpdateState === 'sending' && <p style={{ margin:'14px 0 0', color:'#0369A1', fontSize:12, fontWeight:700 }}>กำลังส่งรายงานไป LINE Group...</p>}
+          {lineUpdateState === 'sent' && <p style={{ margin:'14px 0 0', color:'#047857', fontSize:12, fontWeight:700 }}>ส่งรายงานเข้า LINE Group สำเร็จแล้ว</p>}
+          {lineUpdateState === 'failed' && <p style={{ margin:'14px 0 0', color:'#B91C1C', fontSize:12, lineHeight:1.5 }}>{lineUpdateError}</p>}
           <div style={{ display:'flex', justifyContent:'end', gap:8, marginTop:22 }}>
-            <button type="button" onClick={() => setShowLineUpdate(false)} style={{ border:'1px solid #D8DEE9', borderRadius:8, padding:'9px 14px', cursor:'pointer', background:'#FFFFFF', color:'#475467', fontSize:12, fontWeight:700 }}>Cancel</button>
-            <button type="button" onClick={() => setShowLineUpdate(false)} style={{ border:'none', borderRadius:8, padding:'9px 14px', cursor:'pointer', background:'linear-gradient(135deg,#059669,#16A34A)', color:'#FFFFFF', fontSize:12, fontWeight:800 }}>Send Update</button>
+            <button type="button" onClick={() => setShowLineUpdate(false)} disabled={lineUpdateState === 'sending'} style={{ border:'1px solid #D8DEE9', borderRadius:8, padding:'9px 14px', cursor:lineUpdateState === 'sending' ? 'not-allowed' : 'pointer', background:'#FFFFFF', color:'#475467', fontSize:12, fontWeight:700, opacity:lineUpdateState === 'sending' ? .6 : 1 }}>{lineUpdateState === 'sent' ? 'Close' : 'Cancel'}</button>
+            {lineUpdateState !== 'sent' && <button type="button" onClick={sendLineUpdate} disabled={lineUpdateState === 'sending'} style={{ border:'none', borderRadius:8, padding:'9px 14px', cursor:lineUpdateState === 'sending' ? 'not-allowed' : 'pointer', background:'linear-gradient(135deg,#059669,#16A34A)', color:'#FFFFFF', fontSize:12, fontWeight:800, opacity:lineUpdateState === 'sending' ? .7 : 1 }}>{lineUpdateState === 'sending' ? 'Sending...' : lineUpdateState === 'failed' ? 'Try Again' : 'Send Update'}</button>}
           </div>
         </section>
       </div>
