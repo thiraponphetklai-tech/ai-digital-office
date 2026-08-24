@@ -3,6 +3,7 @@
 import React from 'react'
 import { usePrefsStore, useProjectStore, useTaskStore } from '@/store'
 import type { TaskStatus } from '@/types'
+import { getProjectTimeline } from '@/lib/projectTimeline'
 
 const STATUS_STYLE: Record<TaskStatus, { label: string; color: string; background: string }> = {
   DONE: { label: 'Done', color: '#047857', background: '#ECFDF5' },
@@ -24,6 +25,8 @@ export function ProjectOverviewDashboard() {
   const metricTotal = project?.metrics?.reduce((sum, metric) => sum + metric.total, 0) ?? 0
   const metricCompleted = project?.metrics?.reduce((sum, metric) => sum + metric.completed, 0) ?? 0
   const progress = metricTotal ? Number(((metricCompleted / metricTotal) * 100).toFixed(2)) : projectTasks.length ? Math.round(projectTasks.reduce((sum, task) => sum + task.progress, 0) / projectTasks.length) : 0
+  const timeline = project ? getProjectTimeline(project) : null
+  const scheduleVariance = timeline ? Number((progress - timeline.scheduleProgress).toFixed(2)) : 0
   const workstreams = [...new Set(projectTasks.map(task => task.teamId || 'general'))].map(teamId => {
     const teamTasks = projectTasks.filter(task => (task.teamId || 'general') === teamId)
     return {
@@ -67,6 +70,17 @@ export function ProjectOverviewDashboard() {
       </section>
 
       {project?.metrics?.length ? <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 12 }}>{project.metrics.map(metric => { const metricProgress = Number(((metric.completed / metric.total) * 100).toFixed(2)); return <div key={metric.label} style={{ padding: '13px 16px', borderRadius: 12, background: '#FFFFFF', border: '1px solid #DDE5F5' }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12 }}><strong>{metric.label}</strong><strong style={{ color: '#047857' }}>{metricProgress}%</strong></div><div style={{ margin: '7px 0', color: '#475467', fontSize: 12 }}>{metric.completed.toLocaleString()} / {metric.total.toLocaleString()} {metric.unit ?? 'เครื่อง'}</div><div style={{ height: 6, background: '#EAF6EF', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${metricProgress}%`, height: '100%', background: '#10B981' }} /></div>{metric.detail && <div style={{ marginTop: 8, color: '#667085', fontSize: 11 }}>{metric.detail}</div>}</div> })}</section> : null}
+
+      {timeline && <section style={{ marginBottom: 12, padding: '15px 16px', borderRadius: 12, background: '#FFFFFF', border: '1px solid #DDE5F5' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 12 }}><div><div style={{ fontSize: 10, fontWeight: 800, color: '#4F46E5', letterSpacing: '.08em' }}>PROJECT SCHEDULE</div><strong style={{ fontSize: 13, color: '#172033' }}>Working-day calendar</strong></div><span style={{ padding: '5px 8px', borderRadius: 6, background: scheduleVariance >= 0 ? '#ECFDF5' : '#FFFBEB', color: scheduleVariance >= 0 ? '#047857' : '#B45309', fontSize: 11, fontWeight: 800 }}>{scheduleVariance >= 0 ? `Ahead of schedule ${scheduleVariance}%` : `Behind schedule ${Math.abs(scheduleVariance)}%`}</span></div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(110px, 1fr))', gap: 10 }}>
+          <div><div style={{ fontSize: 11, color: '#667085' }}>Elapsed</div><strong style={{ color: '#172033' }}>{timeline.elapsedWorkingDays} / {timeline.totalWorkingDays} วันทำการ</strong></div>
+          <div><div style={{ fontSize: 11, color: '#667085' }}>Remaining</div><strong style={{ color: timeline.isOverdue ? '#B91C1C' : '#172033' }}>{timeline.isOverdue ? 'Overdue' : `${timeline.remainingWorkingDays} วันทำการ`}</strong></div>
+          <div><div style={{ fontSize: 11, color: '#667085' }}>Schedule progress</div><strong style={{ color: '#4F46E5' }}>{timeline.scheduleProgress}%</strong></div>
+          <div><div style={{ fontSize: 11, color: '#667085' }}>Work progress</div><strong style={{ color: '#047857' }}>{progress}%</strong></div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}><div><div style={{ display: 'flex', justifyContent: 'space-between', color: '#667085', fontSize: 10, marginBottom: 4 }}><span>Schedule</span><span>{timeline.scheduleProgress}%</span></div><div style={{ height: 6, background: '#EEF2FF', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${timeline.scheduleProgress}%`, height: '100%', background: '#6366F1' }} /></div></div><div><div style={{ display: 'flex', justifyContent: 'space-between', color: '#667085', fontSize: 10, marginBottom: 4 }}><span>Work</span><span>{progress}%</span></div><div style={{ height: 6, background: '#EAF6EF', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${progress}%`, height: '100%', background: '#10B981' }} /></div></div></div>
+      </section>}
 
       <section style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 20, padding: '13px 16px', borderRadius: 12, background: '#FAF5FF', border: '1px solid #E9D5FF' }}>
         <span style={{ fontSize: 17 }}>🤖</span>
