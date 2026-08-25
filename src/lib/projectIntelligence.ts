@@ -1,3 +1,4 @@
+
 import { getProjectTimeline } from '@/lib/projectTimeline'
 import type { Project, Task, TaskPriority } from '@/types'
 
@@ -49,6 +50,25 @@ export function getProjectIntelligence(project: Project, tasks: Task[], now = ne
   const workloadAlerts = [...ownerDailyHours.entries()].filter(([, dailyHours]) => dailyHours >= 6.4).map(([ownerId, dailyHours]) => ({ ownerId, dailyHours, capacityPercent: Math.round((dailyHours / 8) * 100) })).sort((a, b) => b.capacityPercent - a.capacityPercent)
   const scheduleStatus = timeline.isOverdue ? 'Overdue' : scheduleDelta < -5 ? `Behind schedule by ${Math.abs(scheduleDelta)}%` : scheduleDelta > 5 ? `Ahead of schedule by ${scheduleDelta}%` : 'On schedule'
   return { progress, done:count('DONE'), inProgress:count('IN_PROGRESS'), atRisk:count('AT_RISK'), blocked:count('BLOCKED'), todo:count('TODO'), scheduleProgress:timeline.scheduleProgress, scheduleDelta, remainingWorkingDays:timeline.remainingWorkingDays, scheduleStatus, attentionTasks:tasks.filter(task => task.status === 'BLOCKED' || task.status === 'AT_RISK'), upcomingMilestones, overdueMilestones, upcomingPlannedTasks, workloadAlerts }
+}
+
+export function getAiRecommendationLines(project: Project, intelligence: ProjectIntelligence) {
+  if (project.id === 'm365-migration-project') {
+    const hq = project.metrics?.find(metric => metric.label === 'HQ')
+    const branch = project.metrics?.find(metric => metric.label === 'Branch')
+    return [
+      `ภาพรวมโครงการนำหน้าแผน ${Math.max(0, intelligence.scheduleDelta).toFixed(2)}% และยังไม่พบงาน Blocked หรือ At Risk`,
+      hq ? `HQ ดำเนินการแล้ว ${((hq.completed / hq.total) * 100).toFixed(2)}% เหลือ ${(hq.total - hq.completed).toLocaleString()} เครื่อง ให้รักษาความเร็ว rollout ต่อเนื่อง` : 'ให้รักษาความเร็ว rollout ของ HQ ต่อเนื่อง',
+      branch ? `Branch ดำเนินการแล้ว ${((branch.completed / branch.total) * 100).toFixed(2)}% เหลือ ${(branch.total - branch.completed).toLocaleString()} สาขา เป็น workstream ที่ควรติดตามเป็นพิเศษ` : 'Branch เป็น workstream ที่ควรติดตามเป็นพิเศษ',
+      'ให้นันติดตาม weekly throughput ของ HQ และ Branch และปรับ resource หากความเร็ว rollout ของ Branch ลดลง',
+    ]
+  }
+
+  if (intelligence.overdueMilestones.length) return ['มี milestone เกินกำหนด ควรทบทวนแผนและกำหนด owner สำหรับ recovery plan ทันที']
+  if (intelligence.scheduleDelta < -5) return ['ความคืบหน้างานต่ำกว่า schedule ควรเร่งงานที่มี dependency และขจัด blocker บน critical path']
+  if (intelligence.workloadAlerts.length) return ['พบ resource ใกล้หรือเกิน capacity ควรปรับการมอบหมายงานก่อนกระทบแผน']
+  if (intelligence.attentionTasks.length) return [`ติดตาม owner ของ ${intelligence.attentionTasks.length} งานที่มีความเสี่ยงหรือถูก Blocked ก่อน เพื่อป้องกันผลกระทบต่อกำหนดส่ง`]
+  return ['โครงการอยู่ในสถานะปกติ ให้ติดตาม milestone ถัดไปและงานกำลังดำเนินการอย่างต่อเนื่อง']
 }
 
 export function formatIntelligenceLines(project: Project, intelligence: ProjectIntelligence) {

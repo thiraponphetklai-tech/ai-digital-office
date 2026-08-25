@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { formatIntelligenceLines, getProjectIntelligence } from '@/lib/projectIntelligence'
+import { formatIntelligenceLines, getAiRecommendationLines, getProjectIntelligence } from '@/lib/projectIntelligence'
 import {
   MOCK_BITLOCKER_PROJECT,
   MOCK_DIGITAL_OFFICE_PROJECT,
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   const aiSummary = [
     intelligence.attentionTasks.length ? `ติดตาม ${intelligence.attentionTasks.length} งานที่มีความเสี่ยง: ${intelligence.attentionTasks.slice(0, 2).map(task => task.title).join(', ')}` : 'ไม่พบงาน Blocked หรือ At Risk ในขณะนี้',
     ...plannedTasks.slice(0, 2).map(task => `แผนปฏิบัติการ: ${task.description ?? task.title}`),
-    intelligence.scheduleDelta < -5 ? 'ความคืบหน้างานต่ำกว่าแผน ควรทบทวนงานบน critical path และเร่งปิด blocker' : intelligence.workloadAlerts.length ? 'พบ resource ใกล้หรือเกิน capacity ควรพิจารณากระจายงานก่อนกระทบกำหนดส่ง' : 'ติดตามงานที่กำลังดำเนินการและ milestone ถัดไปอย่างต่อเนื่อง',
+    ...getAiRecommendationLines(project, intelligence),
   ]
 
   const text = [

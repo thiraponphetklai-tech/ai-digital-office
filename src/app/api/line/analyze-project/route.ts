@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
-import { formatIntelligenceLines, getProjectIntelligence } from '@/lib/projectIntelligence'
+import { formatIntelligenceLines, getAiRecommendationLines, getProjectIntelligence } from '@/lib/projectIntelligence'
 import {
   MOCK_BITLOCKER_PROJECT,
   MOCK_DIGITAL_OFFICE_PROJECT,
@@ -35,15 +35,7 @@ export async function POST(request: NextRequest) {
     const tasks = MOCK_TASKS.filter(task => task.projectId === project.id)
     const intelligence = getProjectIntelligence(project, tasks)
     const followUps = [...intelligence.attentionTasks, ...tasks.filter(task => task.status === 'IN_PROGRESS')].slice(0, 3)
-    const recommendation = intelligence.overdueMilestones.length
-      ? 'มี milestone เกินกำหนด ควรทบทวนแผนและกำหนด owner สำหรับ recovery plan ทันที'
-      : intelligence.scheduleDelta < -5
-        ? 'ความคืบหน้างานต่ำกว่า schedule ควรเร่งงานที่มี dependency และขจัด blocker บน critical path'
-        : intelligence.workloadAlerts.length
-          ? 'มี resource ใกล้หรือเกิน capacity ควรปรับการมอบหมายงานก่อนกระทบแผน'
-          : intelligence.attentionTasks.length
-            ? `ติดตาม owner ของ ${intelligence.attentionTasks.length} งานที่มีความเสี่ยงหรือถูก Blocked ก่อน เพื่อป้องกันผลกระทบต่อกำหนดส่ง`
-            : 'โครงการอยู่ในสถานะปกติ ให้ติดตาม milestone ถัดไปและงานกำลังดำเนินการอย่างต่อเนื่อง'
+    const recommendations = getAiRecommendationLines(project, intelligence)
 
     return {
       type: 'text' as const,
@@ -57,7 +49,7 @@ export async function POST(request: NextRequest) {
         ...(followUps.length ? followUps.map(task => `• ${task.title} — ${task.blocker || task.description || task.status}`) : ['• ไม่มีงาน Blocked หรือ At Risk ในขณะนี้']),
         '',
         '🤖 AI Recommendation:',
-        recommendation,
+        ...recommendations.map(item => `• ${item}`),
       ].join('\n'),
     }
   })
