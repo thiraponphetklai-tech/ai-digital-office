@@ -1,14 +1,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
+import type { Task } from '@/types'
 import { formatIntelligenceLines, getAiRecommendationLines, getProjectIntelligence } from '@/lib/projectIntelligence'
-import {
-  MOCK_BITLOCKER_PROJECT,
-  MOCK_DIGITAL_OFFICE_PROJECT,
-  MOCK_M365_MIGRATION_PROJECT,
-  MOCK_TASKS,
-} from '@/data/mockData'
-
-const projects = [MOCK_BITLOCKER_PROJECT, MOCK_M365_MIGRATION_PROJECT, MOCK_DIGITAL_OFFICE_PROJECT]
+import { getActiveProjectsWithTasks } from '@/lib/projectRepository'
 
 export async function POST(request: NextRequest) {
   if (request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -23,18 +17,13 @@ export async function POST(request: NextRequest) {
 
   const { projectId, projectIds } = await request.json().catch(() => ({}))
   const requestedProjectIds = Array.isArray(projectIds) ? projectIds.filter((id): id is string => typeof id === 'string') : projectId ? [projectId] : []
-  const selectedProjects = requestedProjectIds.length
-    ? projects.filter(item => requestedProjectIds.includes(item.id))
-    : projects.filter(item => item.status === 'ACTIVE')
-  if (!selectedProjects.length) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-  }
+  const selectedProjects = await getActiveProjectsWithTasks(requestedProjectIds)
+  if (!selectedProjects.length) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
 
   const date = new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date())
-  const messages = selectedProjects.map(project => {
-    const tasks = MOCK_TASKS.filter(task => task.projectId === project.id)
+  const messages = selectedProjects.map(({ project, tasks }) => {
     const intelligence = getProjectIntelligence(project, tasks)
-    const followUps = [...intelligence.attentionTasks, ...tasks.filter(task => task.status === 'IN_PROGRESS')].slice(0, 3)
+    const followUps = [...intelligence.attentionTasks, ...tasks.filter((task: Task) => task.status === 'IN_PROGRESS')].slice(0, 3)
     const recommendations = getAiRecommendationLines(project, intelligence)
 
     return {

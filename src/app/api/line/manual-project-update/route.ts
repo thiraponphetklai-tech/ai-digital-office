@@ -1,21 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Task } from '@/types'
 import { formatIntelligenceLines, getAiRecommendationLines, getProjectIntelligence } from '@/lib/projectIntelligence'
-import {
-  MOCK_BITLOCKER_PROJECT,
-  MOCK_DIGITAL_OFFICE_PROJECT,
-  MOCK_M365_MIGRATION_PROJECT,
-  MOCK_TASKS,
-} from '@/data/mockData'
-
-const projects = [MOCK_BITLOCKER_PROJECT, MOCK_M365_MIGRATION_PROJECT, MOCK_DIGITAL_OFFICE_PROJECT]
+import { getProjectWithTasks } from '@/lib/projectRepository'
 
 export async function POST(request: NextRequest) {
   const { projectId } = await request.json().catch(() => ({}))
-  const project = projects.find(item => item.id === projectId)
-
-  if (!project) {
-    return NextResponse.json({ error: 'This project is not available for the demo LINE update.' }, { status: 404 })
-  }
+  if (typeof projectId !== 'string') return NextResponse.json({ error: 'projectId is required' }, { status: 400 })
+  const projectData = await getProjectWithTasks(projectId)
+  if (!projectData) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+  const { project, tasks } = projectData
 
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN
   const recipientId = process.env.LINE_DAILY_SUMMARY_RECIPIENT_ID
@@ -23,13 +16,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'LINE environment variables are not configured' }, { status: 500 })
   }
 
-  const tasks = MOCK_TASKS.filter(task => task.projectId === project.id)
   const intelligence = getProjectIntelligence(project, tasks)
   const date = new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date())
-  const plannedTasks = tasks.filter(task => intelligence.upcomingPlannedTasks.some(action => action.title === task.title))
+  const plannedTasks = tasks.filter((task: Task) => intelligence.upcomingPlannedTasks.some(action => action.title === task.title))
   const aiSummary = [
     intelligence.attentionTasks.length ? `ติดตาม ${intelligence.attentionTasks.length} งานที่มีความเสี่ยง: ${intelligence.attentionTasks.slice(0, 2).map(task => task.title).join(', ')}` : 'ไม่พบงาน Blocked หรือ At Risk ในขณะนี้',
-    ...plannedTasks.slice(0, 2).map(task => `แผนปฏิบัติการ: ${task.description ?? task.title}`),
+    ...plannedTasks.slice(0, 2).map((task: Task) => `แผนปฏิบัติการ: ${task.description ?? task.title}`),
     ...getAiRecommendationLines(project, intelligence),
   ]
 

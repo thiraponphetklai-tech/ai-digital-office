@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProjectStatus { ACTIVE ON_HOLD COMPLETED }
+enum TaskStatus { TODO IN_PROGRESS BLOCKED AT_RISK DONE }
+enum TaskPriority { LOW MEDIUM HIGH CRITICAL }
+enum RiskLevel { NONE LOW MEDIUM HIGH CRITICAL }
+enum ResourceType { EMPLOYEE VENDOR }
+enum MilestoneStatus { UPCOMING ON_TRACK AT_RISK COMPLETED }
+
+model Project {
+  id          String        @id
+  name        String
+  code        String?       @unique
+  description String?
+  startDate   DateTime      @db.Date
+  targetDate  DateTime      @db.Date
+  status      ProjectStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  calendar    ProjectCalendar?
+  metrics     ProjectMetric[]
+  milestones  Milestone[]
+  tasks       Task[]
+  members     ProjectMember[]
+  resources   ProjectResource[]
+  events      ProjectEvent[]
+}
+
+model Resource {
+  id                  String       @id
+  name                String
+  type                ResourceType @default(EMPLOYEE)
+  role                String
+  company             String?
+  skills              String[]
+  capacityHoursPerDay Decimal      @default(8) @db.Decimal(5, 2)
+  active              Boolean      @default(true)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  ownedTasks          Task[]       @relation("TaskOwner")
+  taskAssignments     TaskAssignee[]
+  projectMemberships  ProjectMember[]
+  projectAssignments  ProjectResource[]
+}
+
+model ProjectMember {
+  projectId  String
+  resourceId String
+  createdAt  DateTime @default(now())
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  @@id([projectId, resourceId])
+}
+
+model ProjectResource {
+  projectId  String
+  resourceId String
+  createdAt  DateTime @default(now())
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  @@id([projectId, resourceId])
+}
+
+model ProjectCalendar {
+  id          String   @id @default(cuid())
+  projectId   String   @unique
+  workingDays Int[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  holidays    ProjectHoliday[]
+}
+
+model ProjectHoliday {
+  id         String          @id @default(cuid())
+  calendarId String
+  date       DateTime        @db.Date
+  name       String
+  calendar   ProjectCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  @@unique([calendarId, date])
+}
+
+model ProjectMetric {
+  id        String   @id @default(cuid())
+  projectId String
+  label     String
+  completed Int
+  total     Int
+  unit      String?
+  detail    String?
+  updatedAt DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  @@unique([projectId, label])
+}
+
+model Milestone {
+  id          String          @id
+  projectId   String
+  title       String
+  date        DateTime        @db.Date
+  status      MilestoneStatus @default(UPCOMING)
+  owner       String?
+  description String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  @@index([projectId, date])
+}
+
+model Task {
+  id               String       @id
+  projectId        String
+  title            String
+  description      String?
+  ownerId          String
+  teamId           String
+  status           TaskStatus   @default(TODO)
+  priority         TaskPriority @default(MEDIUM)
+  progress         Decimal      @default(0) @db.Decimal(5, 2)
+  riskLevel        RiskLevel    @default(NONE)
+  startDate        DateTime?    @db.Date
+  plannedStartDate DateTime?    @db.Date
+  plannedEndDate   DateTime?    @db.Date
+  estimatedHours   Decimal?     @db.Decimal(8, 2)
+  actualHours      Decimal?     @db.Decimal(8, 2)
+  dueDate          DateTime?    @db.Date
+  blocker          String?
+  completedAt      DateTime?
+  aiSummary        String?
+  aiRiskAssessment String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  project          Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  owner            Resource     @relation("TaskOwner", fields: [ownerId], references: [id])
+  assignees        TaskAssignee[]
+  dependencies     TaskDependency[] @relation("TaskDependencies")
+  dependents       TaskDependency[] @relation("TaskDependents")
+  events           ProjectEvent[]
+  @@index([projectId, status])
+  @@index([projectId, dueDate])
+  @@index([ownerId, status])
+}
+
+model TaskAssignee {
+  taskId     String
+  resourceId String
+  createdAt  DateTime @default(now())
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  @@id([taskId, resourceId])
+}
+
+model TaskDependency {
+  taskId          String
+  dependsOnTaskId String
+  createdAt       DateTime @default(now())
+  task            Task     @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOnTask   Task     @relation("TaskDependents", fields: [dependsOnTaskId], references: [id], onDelete: Cascade)
+  @@id([taskId, dependsOnTaskId])
+}
+
+model ProjectEvent {
+  id        String   @id @default(cuid())
+  projectId String
+  taskId    String?
+  type      String
+  message   String
+  color     String
+  payload   Json?
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task      Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  @@index([projectId, createdAt])
+}
