@@ -9,7 +9,7 @@ RUN npm ci
 
 FROM dependencies AS builder
 COPY . .
-RUN npx prisma generate && npm run build
+RUN npx prisma generate > /tmp/prisma-generate.log 2>&1 && npm run build
 
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
