@@ -53,5 +53,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: await response.text() }, { status: response.status })
   }
 
-  return NextResponse.json({ sent: true, projectIds: selectedProjects.map(project => project.id), messages: messages.map(message => message.text) })
+  return NextResponse.json({ sent: true, projectIds: selectedProjects.map(({ project }) => project.id), messages: messages.map(message => message.text) })
 }
