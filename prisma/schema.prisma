@@ -7,12 +7,46 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum ProjectStatus { ACTIVE ON_HOLD COMPLETED }
-enum TaskStatus { TODO IN_PROGRESS BLOCKED AT_RISK DONE }
-enum TaskPriority { LOW MEDIUM HIGH CRITICAL }
-enum RiskLevel { NONE LOW MEDIUM HIGH CRITICAL }
-enum ResourceType { EMPLOYEE VENDOR }
-enum MilestoneStatus { UPCOMING ON_TRACK AT_RISK COMPLETED }
+enum ProjectStatus {
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  AT_RISK
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RiskLevel {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ResourceType {
+  EMPLOYEE
+  VENDOR
+}
+
+enum MilestoneStatus {
+  UPCOMING
+  ON_TRACK
+  AT_RISK
+  COMPLETED
+}
 
 model Project {
   id          String        @id
