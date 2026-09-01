@@ -1,0 +1,22 @@
+{
+  "properties": {
+    "template": {
+      "containers": [
+        {
+          "name": "job-ai-digital-office-db",
+          "image": "docker.io/postgres:18",
+          "resources": { "cpu": 0.25, "memory": "0.5Gi" },
+          "env": [
+            { "name": "POSTGRES_ADMIN_PASSWORD", "secretRef": "postgres-admin-password" },
+            { "name": "ADO_APP_PASSWORD", "secretRef": "ado-app-password" }
+          ],
+          "command": ["/bin/sh"],
+          "args": [
+            "-ec",
+            "set -eu\nexport PGSSLMODE=require\nexport PGPASSWORD=\"$POSTGRES_ADMIN_PASSWORD\"\nescaped_password=$(printf '%s' \"$ADO_APP_PASSWORD\" | sed \"s/'/''/g\")\npsql \"host=psql-ai-digital-office-prod.postgres.database.azure.com port=5432 dbname=ai_digital_office user=ado_db_admin sslmode=require\" -v ON_ERROR_STOP=1 -c \"DO \\$\\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'ado_app') THEN CREATE ROLE ado_app WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT; END IF; END \\$\\$;\" -c \"ALTER ROLE ado_app PASSWORD '$escaped_password';\" -c \"GRANT CONNECT ON DATABASE ai_digital_office TO ado_app;\" -c \"GRANT USAGE, CREATE ON SCHEMA public TO ado_app;\" -c \"ALTER SCHEMA public OWNER TO ado_app;\" -c \"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ado_app;\" -c \"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ado_app;\""
+          ]
+        }
+      ]
+    }
+  }
+}

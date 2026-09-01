@@ -12,6 +12,12 @@ COPY . .
 RUN npx prisma generate > /tmp/prisma-generate.log 2>&1 || (base64 /tmp/prisma-generate.log && exit 1)
 RUN npm run build > /tmp/next-build.log 2>&1 || (base64 /tmp/next-build.log && exit 1)
 
+# Used only by the one-off Azure Container Apps migration job.
+# It retains the Prisma CLI and schema; the web runtime image remains minimal.
+FROM dependencies AS migrator
+COPY prisma ./prisma
+RUN npx prisma generate > /tmp/prisma-generate.log 2>&1 || (base64 /tmp/prisma-generate.log && exit 1)
+
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
