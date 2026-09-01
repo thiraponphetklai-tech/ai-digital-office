@@ -16,6 +16,8 @@ RUN npm run build > /tmp/next-build.log 2>&1 || (base64 /tmp/next-build.log && e
 # It retains the Prisma CLI and schema; the web runtime image remains minimal.
 FROM dependencies AS migrator
 COPY prisma ./prisma
+COPY src ./src
+COPY tsconfig.json ./
 RUN npx prisma generate > /tmp/prisma-generate.log 2>&1 || (base64 /tmp/prisma-generate.log && exit 1)
 
 FROM node:22-bookworm-slim AS runner
