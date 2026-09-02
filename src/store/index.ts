@@ -13,7 +13,7 @@ import type {
 } from '@/types'
 import {
   MOCK_DIGITAL_OFFICE_PROJECT, MOCK_BITLOCKER_PROJECT, MOCK_M365_MIGRATION_PROJECT, MOCK_TASKS, MOCK_EVENTS, MOCK_ZONES,
-  MOCK_MESSAGES, DEFAULT_USER_PREFS, AI_REPLIES,
+  MOCK_MESSAGES, DEFAULT_USER_PREFS,
 } from '@/data/mockData'
 
 async function persistTask(task: Task) {
@@ -416,9 +416,10 @@ interface ChatStore {
   aiReplyIndex:    number
   sendMessage:     (text: string) => void
   receiveAiMessage:(text: string, quickReplies?: string[]) => void
+  setTyping:       (isTyping: boolean) => void
 }
 
-export const useChatStore = create<ChatStore>((set, get) => ({
+export const useChatStore = create<ChatStore>(set => ({
   messages:     MOCK_MESSAGES,
   isTyping:     false,
   aiReplyIndex: 0,
@@ -437,12 +438,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       message: `Manager: "${text.slice(0, 40)}${text.length > 40 ? '…' : ''}"`,
       color: '#059669',
     })
-    setTimeout(() => {
-      const reply = AI_REPLIES[get().aiReplyIndex % AI_REPLIES.length]
-      get().receiveAiMessage(reply)
-      set(state => ({ aiReplyIndex: state.aiReplyIndex + 1 }))
-    }, 800)
   },
+
+  setTyping: (isTyping) => set({ isTyping }),
 
   receiveAiMessage: (text, quickReplies) => {
     set(state => ({

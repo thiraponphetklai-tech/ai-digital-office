@@ -1,7 +1,6 @@
 'use client'
 import React, { useRef, useEffect, useState } from 'react'
-import { useChatStore, usePrefsStore, useTaskStore, useEventStore } from '@/store'
-import { MockAgentService } from '@/services/mockAgent'
+import { useChatStore, usePrefsStore } from '@/store'
 
 // ── Types ─────────────────────────────────────────────────────────
 interface ConfirmDialog {
@@ -170,10 +169,9 @@ function DNDBar({ onClose }: { onClose: () => void }) {
 
 // ── Main ChatPanel ────────────────────────────────────────────────
 export function ChatPanel({ height = 340 }: { height?: number | string }) {
-  const { messages, isTyping, sendMessage, receiveAiMessage } = useChatStore()
+  const { messages, isTyping, sendMessage, receiveAiMessage, setTyping } = useChatStore()
   const { prefs, toggleDnd }  = usePrefsStore()
-  const { pushEvent }          = useEventStore()
-  const { tasks }              = useTaskStore()
+  const activeProjectId = prefs.activeProjectId
 
   const [input,   setInput]   = useState('')
   const [chatMode, setChatMode] = useState<'line' | 'ai'>('ai')
@@ -181,65 +179,39 @@ export function ChatPanel({ height = 340 }: { height?: number | string }) {
   const [showDnd, setShowDnd] = useState(false)
   const bodyRef  = useRef<HTMLDivElement>(null)
 
-  // Agent instance — shared across renders
-  const agent = React.useMemo(() => new MockAgentService({
-    onMessage:     (text, qr) => receiveAiMessage(text, qr),
-    onTyping:      () => {},
-    onRobotActive: () => {},
-  }), [])
-
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight
   }, [messages, isTyping])
 
+  async function askAssistant(message: string) {
+    setTyping(true)
+    try {
+      const history = messages.slice(-8).filter(item => item.role === 'me' || item.role === 'ai').map(item => ({ role: item.role === 'me' ? 'user' as const : 'assistant' as const, content: item.text }))
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: activeProjectId, message, history }),
+      })
+      const result = await response.json().catch(() => ({})) as { answer?: string; error?: string }
+      if (!response.ok || !result.answer) throw new Error(result.error || 'AI assistant is temporarily unavailable.')
+      receiveAiMessage(result.answer)
+    } catch (error) {
+      receiveAiMessage(error instanceof Error ? error.message : 'AI assistant is temporarily unavailable.')
+    }
+  }
+
   function send() {
     const val = input.trim()
-    if (!val) return
-    // Show user message immediately
+    if (!val || isTyping) return
     sendMessage(val)
     setInput('')
-    // Route to AI agent
-    const agentTasks = tasks.map(t => ({
-      id: t.id, title: t.title, status: t.status,
-      blocker: t.blocker, owner: t.ownerId, dueDate: t.dueDate,
-    }))
-    agent.handleCommand(val, agentTasks)
+    void askAssistant(val)
   }
 
   function handleQuickReply(qr: string) {
-    if (qr.startsWith('Follow-up')) {
-      setConfirm({
-        message: `ยืนยันส่ง follow-up หา owner ของ UAT?\nAI จะส่งข้อความ friendly ให้ทันที`,
-        onConfirm: () => {
-          sendMessage(qr)
-          // Use agent for follow-up
-          const uatTask = tasks.find(t => t.title.includes('UAT'))
-          if (uatTask) {
-            agent.sendFollowUp({
-              id: uatTask.id, title: uatTask.title,
-              status: uatTask.status, blocker: uatTask.blocker,
-              owner: 'Somchai', dueDate: uatTask.dueDate,
-            })
-          }
-        },
-      })
-    } else if (qr === 'ทำอยู่ครับ') {
-      sendMessage(qr)
-      receiveAiMessage('โอเคครับ ขอบคุณที่แจ้งนะครับ 😊\nถ้ามีอะไรติดขัดแจ้งได้เลยครับ 👍')
-    } else if (qr === 'ติดปัญหา') {
-      sendMessage(qr)
-      receiveAiMessage('เข้าใจแล้วครับ ติดปัญหาอะไรครับ?\nบอกได้เลย AI จะช่วย update status ให้', ['รอ Vendor API', 'รอ Review', 'อื่นๆ'])
-    } else if (qr === 'เสร็จแล้ว') {
-      sendMessage(qr)
-      receiveAiMessage('เยี่ยมเลยครับ! 🎉\nให้ผม update status เป็น Done ไหมครับ?', ['Update Done ✓', 'ยังไม่ต้อง'])
-    } else {
-      sendMessage(qr)
-      const agentTasks = tasks.map(t => ({
-        id: t.id, title: t.title, status: t.status,
-        blocker: t.blocker, owner: t.ownerId, dueDate: t.dueDate,
-      }))
-      agent.handleCommand(qr, agentTasks)
-    }
+    if (isTyping) return
+    sendMessage(qr)
+    void askAssistant(qr)
   }
 
   const isAIReview = (text: string) =>
