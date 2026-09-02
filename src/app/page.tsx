@@ -5,6 +5,7 @@ import {
   usePrefsStore, useChatStore,
 } from '@/store'
 import { ProjectHub } from '@/components/ProjectHub'
+import { ApiDataHydrator } from '@/components/ApiDataHydrator'
 import dynamic from 'next/dynamic'
 import { ChatPanel } from '@/components/ChatPanel'
 import { MockAgentService } from '@/services/mockAgent'
@@ -592,6 +593,7 @@ export default function AIDigitalOffice() {
 
   return (
     <>
+      <ApiDataHydrator />
       <style>{`
         @keyframes pulseDesk {
           0%,100% { box-shadow:0 2px 10px #FCA5A560; }

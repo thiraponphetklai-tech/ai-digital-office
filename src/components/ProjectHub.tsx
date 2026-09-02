@@ -28,6 +28,8 @@ export function ProjectHub({ onOpenWorkspace }: ProjectHubProps) {
   const [description, setDescription] = useState('')
   const [startDate, setStartDate] = useState(today())
   const [targetDate, setTargetDate] = useState(addMonths(3))
+  const [isCreating, setIsCreating] = useState(false)
+  const [createError, setCreateError] = useState('')
 
   const filteredProjects = projects.filter(project =>
     `${project.name} ${project.code ?? ''}`.toLowerCase().includes(query.toLowerCase())
@@ -38,9 +40,11 @@ export function ProjectHub({ onOpenWorkspace }: ProjectHubProps) {
     onOpenWorkspace()
   }
 
-  function createProject(event: FormEvent<HTMLFormElement>) {
+  async function createProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const project: Project = {
+    setIsCreating(true)
+    setCreateError('')
+    const draft: Project = {
       id: `project-${Date.now()}`,
       name: name.trim(),
       code: code.trim().toUpperCase() || undefined,
@@ -51,10 +55,24 @@ export function ProjectHub({ onOpenWorkspace }: ProjectHubProps) {
       targetDate,
       status: 'ACTIVE',
     }
-    addProject(project)
-    setActiveProject(project.id)
-    setShowSetup(false)
-    onOpenWorkspace()
+
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(draft),
+      })
+      const result = await response.json().catch(() => ({})) as Project & { error?: string }
+      if (!response.ok) throw new Error(result.error || 'Unable to create project.')
+      addProject(result)
+      setActiveProject(result.id)
+      setShowSetup(false)
+      onOpenWorkspace()
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : 'Unable to create project.')
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   return (
@@ -113,7 +131,7 @@ export function ProjectHub({ onOpenWorkspace }: ProjectHubProps) {
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(15,23,42,.38)', display: 'grid', placeItems: 'center', padding: 20 }}>
           <form onSubmit={createProject} style={{ width: 'min(520px, 100%)', background: '#FFFFFF', borderRadius: 16, padding: 24, boxShadow: '0 24px 64px rgba(15,23,42,.26)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 16 }}>
-              <div><h2 style={{ margin: 0, fontSize: 20 }}>Create New Project</h2><p style={{ margin: '5px 0 20px', color: '#667085', fontSize: 12 }}>Mock setup only — backend persistence will be connected later.</p></div>
+              <div><h2 style={{ margin: 0, fontSize: 20 }}>Create New Project</h2><p style={{ margin: '5px 0 20px', color: '#667085', fontSize: 12 }}>The project will be saved to the shared workspace database.</p></div>
               <button type="button" onClick={() => setShowSetup(false)} style={closeButtonStyle}>×</button>
             </div>
             <label style={labelStyle}>Project name *<input required autoFocus value={name} onChange={event => setName(event.target.value)} placeholder="e.g. Customer Portal" style={inputStyle} /></label>
@@ -123,9 +141,10 @@ export function ProjectHub({ onOpenWorkspace }: ProjectHubProps) {
               <label style={labelStyle}>Start date<input required type="date" value={startDate} onChange={event => setStartDate(event.target.value)} style={inputStyle} /></label>
               <label style={labelStyle}>Target date<input required type="date" min={startDate} value={targetDate} onChange={event => setTargetDate(event.target.value)} style={inputStyle} /></label>
             </div>
+            {createError && <p style={{ margin: '4px 0 0', color: '#B91C1C', fontSize: 12 }}>{createError}</p>}
             <div style={{ display: 'flex', justifyContent: 'end', gap: 8, marginTop: 22 }}>
-              <button type="button" onClick={() => setShowSetup(false)} style={secondaryButtonStyle}>Cancel</button>
-              <button type="submit" style={primaryButtonStyle}>Create & Open Workspace</button>
+              <button type="button" disabled={isCreating} onClick={() => setShowSetup(false)} style={secondaryButtonStyle}>Cancel</button>
+              <button type="submit" disabled={isCreating} style={{ ...primaryButtonStyle, opacity: isCreating ? .7 : 1 }}>{isCreating ? 'Creating...' : 'Create & Open Workspace'}</button>
             </div>
           </form>
         </div>

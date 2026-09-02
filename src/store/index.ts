@@ -16,6 +16,19 @@ import {
   MOCK_MESSAGES, DEFAULT_USER_PREFS, AI_REPLIES,
 } from '@/data/mockData'
 
+async function persistTask(task: Task) {
+  try {
+    const response = await fetch(`/api/tasks/${encodeURIComponent(task.id)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(task),
+    })
+    if (!response.ok) throw new Error(`Task update failed (${response.status})`)
+  } catch (error) {
+    console.error('Unable to persist task update', error)
+  }
+}
+
 function computeStats(tasks: Task[]): ProjectStats {
   const done    = tasks.filter(t => t.status === 'DONE').length
   const working = tasks.filter(t => t.status === 'IN_PROGRESS').length
@@ -35,6 +48,7 @@ interface TaskStore {
   setTaskBlocker:     (taskId: string, blocker: string) => void
   updateTaskDetails:  (taskId: string, updates: Partial<Pick<Task, 'title' | 'description' | 'ownerId' | 'assigneeIds' | 'teamId' | 'priority' | 'plannedStartDate' | 'plannedEndDate' | 'estimatedHours' | 'actualHours' | 'dueDate'>>) => void
   addTask:            (task: Task) => void
+  setTasks:           (tasks: Task[]) => void
   getTask:            (taskId: string) => Task | undefined
 }
 
@@ -51,6 +65,7 @@ export const useTaskStore = create<TaskStore>()(persist((set, get) => ({
     })
     const task = get().getTask(taskId)
     if (!task) return
+    void persistTask(task)
     const typeMap: Record<TaskStatus, EventType> = {
       TODO: 'task.created', IN_PROGRESS: 'task.started',
       BLOCKED: 'task.blocked', AT_RISK: 'task.updated', DONE: 'task.completed',
@@ -90,6 +105,7 @@ export const useTaskStore = create<TaskStore>()(persist((set, get) => ({
 
     const task = get().getTask(taskId)
     if (!task) return
+    void persistTask(task)
 
     if (task.status === 'DONE') {
       eventBus.emit({
@@ -125,6 +141,7 @@ export const useTaskStore = create<TaskStore>()(persist((set, get) => ({
     }))
     const task = get().getTask(taskId)
     if (!task) return
+    void persistTask(task)
     eventBus.emit({
       id: `e-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
       type: 'task.updated',
@@ -164,6 +181,7 @@ export const useTaskStore = create<TaskStore>()(persist((set, get) => ({
     })
     const task = get().getTask(taskId)
     if (!task) return
+    void persistTask(task)
     eventBus.emitWithThrottle({
       id: `e-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, type: 'task.blocked',
       projectId: task.projectId, taskId,
@@ -174,10 +192,15 @@ export const useTaskStore = create<TaskStore>()(persist((set, get) => ({
     useOfficeStore.getState().syncVisualState(taskId, 'BLOCKED')
   },
 
+  setTasks: (tasks) => {
+    set({ tasks, stats: computeStats(tasks) })
+    useOfficeStore.getState().rebuildAllVisualStates(tasks)
+  },
+
   getTask: (taskId) => get().tasks.find(t => t.id === taskId),
 }), {
   name: 'ai-digital-office-tasks',
-  version: 7,
+  version: 8,
   partialize: state => ({ tasks: state.tasks, stats: state.stats }),
   migrate: persisted => {
     const state = persisted as Partial<TaskStore>
@@ -197,6 +220,7 @@ export const useTaskStore = create<TaskStore>()(persist((set, get) => ({
 interface ResourceStore {
   resources: Resource[]
   addResource: (resource: Resource) => void
+  setResources: (resources: Resource[]) => void
 }
 
 export const useResourceStore = create<ResourceStore>()(persist(set => ({
@@ -209,9 +233,10 @@ export const useResourceStore = create<ResourceStore>()(persist(set => ({
     { id: 'u6', name: 'นัน', type: 'EMPLOYEE', role: 'Project Manager', capacityHoursPerDay: 8, active: true },
   ],
   addResource: (resource) => set(state => ({ resources: [...state.resources, resource] })),
+  setResources: (resources) => set({ resources }),
 }), {
   name: 'ai-digital-office-resources',
-  version: 2,
+  version: 3,
   partialize: state => ({ resources: state.resources }),
   migrate: persisted => {
     const state = persisted as Partial<ResourceStore>
@@ -233,18 +258,20 @@ export const useResourceStore = create<ResourceStore>()(persist(set => ({
 interface ProjectStore {
   projects: Project[]
   addProject: (project: Project) => void
+  setProjects: (projects: Project[]) => void
   updateProject: (projectId: string, updates: Partial<Project>) => void
 }
 
 export const useProjectStore = create<ProjectStore>()(persist(set => ({
   projects: [MOCK_DIGITAL_OFFICE_PROJECT, MOCK_BITLOCKER_PROJECT, MOCK_M365_MIGRATION_PROJECT],
   addProject: (project) => set(state => ({ projects: [...state.projects, project] })),
+  setProjects: (projects) => set({ projects }),
   updateProject: (projectId, updates) => set(state => ({
     projects: state.projects.map(project => project.id === projectId ? { ...project, ...updates } : project),
   })),
 }), {
   name: 'ai-digital-office-projects',
-  version: 11,
+  version: 12,
   partialize: state => ({ projects: state.projects }),
   migrate: persisted => {
     const state = persisted as Partial<ProjectStore>
