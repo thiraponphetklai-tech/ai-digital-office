@@ -27,7 +27,8 @@ export function getProjectIntelligence(project: Project, tasks: Task[], now = ne
   const count = (status: string) => tasks.filter(task => task.status === status).length
   const metricTotal = project.metrics?.reduce((total, metric) => total + metric.total, 0) ?? 0
   const metricCompleted = project.metrics?.reduce((total, metric) => total + metric.completed, 0) ?? 0
-  const progress = metricTotal ? Number(((metricCompleted / metricTotal) * 100).toFixed(2)) : tasks.length ? Math.round(tasks.reduce((total, task) => total + task.progress, 0) / tasks.length) : 0
+  // WBS is the source of truth for project completion; metrics are operational KPIs shown separately.
+  const progress = tasks.length ? Number((tasks.reduce((total, task) => total + task.progress, 0) / tasks.length).toFixed(2)) : metricTotal ? Number(((metricCompleted / metricTotal) * 100).toFixed(2)) : 0
   const timeline = getProjectTimeline(project, now)
   const scheduleDelta = Number((progress - timeline.scheduleProgress).toFixed(2))
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -73,7 +74,7 @@ export function getAiRecommendationLines(project: Project, intelligence: Project
 
 export function formatIntelligenceLines(project: Project, intelligence: ProjectIntelligence) {
   return [
-    `Work progress: ${intelligence.progress}% | Schedule: ${intelligence.scheduleProgress}%`,
+    `WBS progress: ${intelligence.progress}% | Schedule: ${intelligence.scheduleProgress}%`,
     `Schedule status: ${intelligence.scheduleStatus} | Remaining: ${intelligence.remainingWorkingDays} working days`,
     ...(project.metrics?.map(metric => `• ${metric.label}: ${metric.completed.toLocaleString()} / ${metric.total.toLocaleString()} ${metric.unit ?? 'items'} (${((metric.completed / metric.total) * 100).toFixed(2)}%)${metric.detail ? ` — ${metric.detail}` : ''}`) ?? []),
     `✅ Done: ${intelligence.done} | 🔵 In progress: ${intelligence.inProgress} | ⚠️ At risk: ${intelligence.atRisk} | 🔴 Blocked: ${intelligence.blocked} | ⏳ To do: ${intelligence.todo}`,
