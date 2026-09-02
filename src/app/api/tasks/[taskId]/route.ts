@@ -15,8 +15,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       data: {
         title: body.title, description: body.description, ownerId: body.ownerId, teamId: body.teamId, status: body.status, priority: body.priority,
         riskLevel: body.riskLevel, progress: body.progress, blocker: body.blocker, estimatedHours: body.estimatedHours, actualHours: body.actualHours,
-        startDate: body.startDate ? new Date(body.startDate) : undefined, plannedStartDate: body.plannedStartDate ? new Date(body.plannedStartDate) : undefined,
-        plannedEndDate: body.plannedEndDate ? new Date(body.plannedEndDate) : undefined, dueDate: body.dueDate ? new Date(body.dueDate) : undefined,
+        startDate: body.startDate === undefined ? undefined : body.startDate ? new Date(body.startDate) : null,
+        plannedStartDate: body.plannedStartDate === undefined ? undefined : body.plannedStartDate ? new Date(body.plannedStartDate) : null,
+        plannedEndDate: body.plannedEndDate === undefined ? undefined : body.plannedEndDate ? new Date(body.plannedEndDate) : null,
+        dueDate: body.dueDate === undefined ? undefined : body.dueDate ? new Date(body.dueDate) : null,
         completedAt: body.completedAt ? new Date(body.completedAt) : undefined,
         assignees: Array.isArray(body.assigneeIds) ? { create: body.assigneeIds.map((resourceId: string) => ({ resourceId })) } : undefined,
       }, include,

@@ -21,7 +21,7 @@ const PRIORITY_CFG: Record<TaskPriority, { label: string; color: string }> = {
 type SortKey = 'title' | 'status' | 'priority' | 'progress' | 'dueDate' | 'ownerId'
 
 export function WBSTable() {
-  const { tasks, updateTaskStatus, updateTaskProgress } = useTaskStore()
+  const { tasks, updateTaskStatus, updateTaskProgress, updateTaskDetails } = useTaskStore()
   const activeProjectId = usePrefsStore(s => s.prefs.activeProjectId)
   const projectTasks = tasks.filter(task => task.projectId === activeProjectId)
 
@@ -74,7 +74,21 @@ export function WBSTable() {
       updateTaskStatus(task.id, editVal as TaskStatus)
     } else if (editing.field === 'progress') {
       updateTaskProgress(task.id, Number(editVal))
+    } else if (editing.field === 'title' || editing.field === 'description' || editing.field === 'ownerId' || editing.field === 'priority' || editing.field === 'dueDate') {
+      const value = editing.field === 'title' ? editVal.trim() : editVal
+      if (editing.field !== 'title' || value) updateTaskDetails(task.id, { [editing.field]: value } as Partial<Task>)
     }
+    setEditing(null)
+  }
+
+  function savePlanning(task: Task, form: HTMLFormElement) {
+    const data = new FormData(form)
+    updateTaskDetails(task.id, {
+      plannedStartDate: String(data.get('plannedStartDate') || ''),
+      plannedEndDate: String(data.get('plannedEndDate') || ''),
+      estimatedHours: data.get('estimatedHours') ? Number(data.get('estimatedHours')) : undefined,
+      actualHours: data.get('actualHours') ? Number(data.get('actualHours')) : undefined,
+    })
     setEditing(null)
   }
 
@@ -154,6 +168,12 @@ export function WBSTable() {
                 const exp = expanded.has(task.id)
                 const isEditStatus   = editing?.id === task.id && editing.field === 'status'
                 const isEditProgress = editing?.id === task.id && editing.field === 'progress'
+                const isEditTitle    = editing?.id === task.id && editing.field === 'title'
+                const isEditDescription = editing?.id === task.id && editing.field === 'description'
+                const isEditPriority = editing?.id === task.id && editing.field === 'priority'
+                const isEditOwner    = editing?.id === task.id && editing.field === 'ownerId'
+                const isEditDueDate  = editing?.id === task.id && editing.field === 'dueDate'
+                const isEditPlanning = editing?.id === task.id && editing.field === 'planning'
 
                 return (
                   <React.Fragment key={task.id}>
@@ -181,9 +201,10 @@ export function WBSTable() {
 
                       {/* Task name */}
                       <td style={{ padding: '10px 12px' }}>
-                        <div style={{ fontWeight: 600, color: '#172033', marginBottom: task.blocker ? 3 : 0 }}>
+                        {isEditTitle ? <input autoFocus value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => commitEdit(task)} onKeyDown={e => { if (e.key === 'Enter') commitEdit(task); if (e.key === 'Escape') setEditing(null) }} style={{ width:'100%', fontWeight:600, fontSize:12, border:'1px solid #C7D7FF', borderRadius:6, padding:'4px 6px', outline:'none' }} /> : <div onClick={() => startEdit(task.id, 'title', task.title)} title="Click to edit task name" style={{ fontWeight: 600, color: '#172033', marginBottom: task.blocker ? 3 : 0, cursor:'pointer' }}>
                           {task.title}
-                        </div>
+                        </div>}
+
                         {task.blocker && (
                           <div style={{ fontSize: 10, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 4 }}>
                             ⚠ {task.blocker}
@@ -193,7 +214,7 @@ export function WBSTable() {
 
                       {/* Description */}
                       <td style={{ padding: '10px 12px', width: 280, color: '#667085', fontSize: 11, lineHeight: 1.45 }}>
-                        {task.description ?? <span style={{ color: '#CBD5E1' }}>—</span>}
+                        {isEditDescription ? <textarea autoFocus value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => commitEdit(task)} onKeyDown={e => { if (e.key === 'Escape') setEditing(null); if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) commitEdit(task) }} placeholder="Add description" style={{ width:'100%', minHeight:48, resize:'vertical', fontSize:11, border:'1px solid #C7D7FF', borderRadius:6, padding:'5px 6px', outline:'none' }} /> : <div onClick={() => startEdit(task.id, 'description', task.description ?? '')} title="Click to edit description" style={{ cursor:'pointer', minHeight:16 }}>{task.description || <span style={{ color: '#CBD5E1' }}>Click to add description</span>}</div>}
                       </td>
 
                       {/* Status — click to edit */}
@@ -228,22 +249,12 @@ export function WBSTable() {
 
                       {/* Priority */}
                       <td style={{ padding: '10px 8px', width: 95 }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: pri.color }}>
-                          {pri.label}
-                        </span>
+                        {isEditPriority ? <select autoFocus value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => commitEdit(task)} style={{ fontSize:11, border:'1px solid #C7D7FF', borderRadius:6, padding:'3px 5px', outline:'none', background:'#fff' }}>{(Object.keys(PRIORITY_CFG) as TaskPriority[]).map(priority => <option key={priority} value={priority}>{PRIORITY_CFG[priority].label}</option>)}</select> : <span onClick={() => startEdit(task.id, 'priority', task.priority)} title="Click to edit priority" style={{ fontSize: 11, fontWeight: 600, color: pri.color, cursor:'pointer' }}>{pri.label}</span>}
                       </td>
 
                       {/* Owner */}
                       <td style={{ padding: '10px 8px', width: 80 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <div style={{
-                            width: 22, height: 22, borderRadius: '50%',
-                            background: 'linear-gradient(135deg,#335CFF,#6D5CE7)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 8, fontWeight: 700, color: '#fff', flexShrink: 0,
-                          }}>{task.ownerId.slice(-2).toUpperCase()}</div>
-                          <span style={{ fontSize: 11, color: '#667085' }}>{task.ownerId}</span>
-                        </div>
+                        {isEditOwner ? <input autoFocus value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => commitEdit(task)} onKeyDown={e => { if (e.key === 'Enter') commitEdit(task); if (e.key === 'Escape') setEditing(null) }} style={{ width:'100%', fontSize:11, border:'1px solid #C7D7FF', borderRadius:6, padding:'4px 5px', outline:'none' }} /> : <div onClick={() => startEdit(task.id, 'ownerId', task.ownerId)} title="Click to edit owner" style={{ display: 'flex', alignItems: 'center', gap: 6, cursor:'pointer' }}><div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#335CFF,#6D5CE7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#fff', flexShrink: 0 }}>{task.ownerId.slice(-2).toUpperCase()}</div><span style={{ fontSize: 11, color: '#667085' }}>{task.ownerId}</span></div>}
                       </td>
 
                       {/* Progress — click to edit */}
@@ -279,24 +290,12 @@ export function WBSTable() {
 
                       {/* Planning */}
                       <td style={{ padding: '10px 8px', width: 150, color:'#667085', fontSize:10, lineHeight:1.45 }}>
-                        {task.plannedStartDate || task.plannedEndDate ? <><div>{task.plannedStartDate ? new Date(task.plannedStartDate).toLocaleDateString('th-TH', { day:'numeric', month:'short' }) : '—'} → {task.plannedEndDate ? new Date(task.plannedEndDate).toLocaleDateString('th-TH', { day:'numeric', month:'short' }) : '—'}</div><strong style={{ color:'#4F46E5' }}>{task.estimatedHours ?? 0}h est. · {task.actualHours ?? 0}h actual</strong></> : <span style={{ color:'#CBD5E1' }}>Not planned</span>}
+                        {isEditPlanning ? <form onSubmit={e => { e.preventDefault(); savePlanning(task, e.currentTarget) }} style={{ display:'grid', gap:4 }}><input name="plannedStartDate" type="date" defaultValue={task.plannedStartDate ?? ''} title="Planned start" style={{ fontSize:10, border:'1px solid #C7D7FF', borderRadius:5, padding:3 }} /><input name="plannedEndDate" type="date" defaultValue={task.plannedEndDate ?? ''} title="Planned end" style={{ fontSize:10, border:'1px solid #C7D7FF', borderRadius:5, padding:3 }} /><div style={{ display:'flex', gap:3 }}><input name="estimatedHours" type="number" min={0} step="0.5" defaultValue={task.estimatedHours ?? ''} placeholder="Est. h" style={{ width:'50%', fontSize:10, border:'1px solid #C7D7FF', borderRadius:5, padding:3 }} /><input name="actualHours" type="number" min={0} step="0.5" defaultValue={task.actualHours ?? ''} placeholder="Actual h" style={{ width:'50%', fontSize:10, border:'1px solid #C7D7FF', borderRadius:5, padding:3 }} /></div><div style={{ display:'flex', gap:4 }}><button type="submit" style={{ border:'none', borderRadius:5, padding:'3px 6px', cursor:'pointer', background:'#335CFF', color:'#fff', fontSize:10, fontWeight:700 }}>Save</button><button type="button" onClick={() => setEditing(null)} style={{ border:'1px solid #D8DEE9', borderRadius:5, padding:'3px 6px', cursor:'pointer', background:'#fff', color:'#667085', fontSize:10 }}>Cancel</button></div></form> : <div onClick={() => startEdit(task.id, 'planning', '')} title="Click to edit planning" style={{ cursor:'pointer' }}>{task.plannedStartDate || task.plannedEndDate ? <><div>{task.plannedStartDate ? new Date(task.plannedStartDate).toLocaleDateString('th-TH', { day:'numeric', month:'short' }) : '—'} → {task.plannedEndDate ? new Date(task.plannedEndDate).toLocaleDateString('th-TH', { day:'numeric', month:'short' }) : '—'}</div><strong style={{ color:'#4F46E5' }}>{task.estimatedHours ?? 0}h est. · {task.actualHours ?? 0}h actual</strong></> : <span style={{ color:'#CBD5E1' }}>Click to plan</span>}</div>}
                       </td>
 
                       {/* Due date */}
                       <td style={{ padding: '10px 8px', width: 110 }}>
-                        {task.dueDate ? (
-                          <span style={{
-                            fontSize: 11, fontWeight: 500,
-                            color: dl !== null && dl < 0 ? '#DC2626' : dl !== null && dl <= 1 ? '#D97706' : '#667085',
-                          }}>
-                            {new Date(task.dueDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
-                            {dl !== null && (
-                              <span style={{ display: 'block', fontSize: 10, marginTop: 1 }}>
-                                {dl < 0 ? `${Math.abs(dl)}d overdue` : dl === 0 ? 'Due today' : `${dl}d left`}
-                              </span>
-                            )}
-                          </span>
-                        ) : <span style={{ color: '#CBD5E1', fontSize: 11 }}>—</span>}
+                        {isEditDueDate ? <input autoFocus type="date" value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => commitEdit(task)} onKeyDown={e => { if (e.key === 'Enter') commitEdit(task); if (e.key === 'Escape') setEditing(null) }} style={{ width:'100%', fontSize:10, border:'1px solid #C7D7FF', borderRadius:6, padding:'3px', outline:'none' }} /> : <div onClick={() => startEdit(task.id, 'dueDate', task.dueDate ?? '')} title="Click to edit due date" style={{ cursor:'pointer', minHeight:16 }}>{task.dueDate ? <span style={{ fontSize: 11, fontWeight: 500, color: dl !== null && dl < 0 ? '#DC2626' : dl !== null && dl <= 1 ? '#D97706' : '#667085' }}>{new Date(task.dueDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}{dl !== null && <span style={{ display: 'block', fontSize: 10, marginTop: 1 }}>{dl < 0 ? `${Math.abs(dl)}d overdue` : dl === 0 ? 'Due today' : `${dl}d left`}</span>}</span> : <span style={{ color: '#CBD5E1', fontSize: 11 }}>Click to set</span>}</div>}
                       </td>
 
                       {/* Risk */}
