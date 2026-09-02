@@ -9,6 +9,7 @@ import { KanbanColumn } from './KanbanColumn'
 import { TaskCard }     from './TaskCard'
 import { TaskDetail }   from './TaskDetail'
 import { WBSTable }     from './WBSTable'
+import { TaskCreateDialog } from './TaskCreateDialog'
 import { ChatPanel }    from '@/components/ChatPanel'
 import type { Task, TaskStatus } from '@/types'
 
@@ -26,6 +27,7 @@ export function TaskBoard() {
   const [filterPriority, setFilterPriority] = useState<string>('ALL')
   const [search,         setSearch]         = useState('')
   const [showAiChat,     setShowAiChat]     = useState(false)
+  const [createStatus,   setCreateStatus]   = useState<TaskStatus | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -69,8 +71,7 @@ export function TaskBoard() {
   }
 
   function handleAddTask(status: TaskStatus) {
-    // In Phase 2 this opens a create modal
-    alert(`Create new ${status} task — coming in next step!`)
+    setCreateStatus(status)
   }
 
   return (
@@ -193,6 +194,8 @@ export function TaskBoard() {
       )}
 
       {/* Task detail panel */}
+      {createStatus && <TaskCreateDialog projectId={activeProjectId} initialStatus={createStatus} onClose={() => setCreateStatus(null)} />}
+
       {selectedTask && (
         <TaskDetail
           task={projectTasks.find(t => t.id === selectedTask.id) ?? selectedTask}
