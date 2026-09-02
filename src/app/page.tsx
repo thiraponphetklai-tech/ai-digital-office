@@ -588,7 +588,7 @@ export default function AIDigitalOffice() {
   const [showHub, setShowHub] = React.useState(true)
 
   if (showHub) {
-    return <ProjectHub onOpenWorkspace={() => setShowHub(false)} />
+    return <><ApiDataHydrator /><ProjectHub onOpenWorkspace={() => setShowHub(false)} /></>
   }
 
   return (
