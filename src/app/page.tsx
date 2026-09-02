@@ -111,6 +111,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
   const [milestoneDateDraft, setMilestoneDateDraft] = React.useState('')
   const [milestoneOwnerDraft, setMilestoneOwnerDraft] = React.useState('')
   const [settingsError, setSettingsError] = React.useState('')
+  const [isSavingSettings, setIsSavingSettings] = React.useState(false)
   const [lineUpdateState, setLineUpdateState] = React.useState<'idle' | 'sending' | 'sent' | 'failed'>('idle')
   const [lineUpdateError, setLineUpdateError] = React.useState('')
   const activeProject = projects.find(project => project.id === prefs.activeProjectId)
@@ -179,7 +180,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
     setMilestoneOwnerDraft('')
   }
 
-  function saveProjectSettings() {
+  async function saveProjectSettings() {
     if (!activeProject) return
     if (workingDaysDraft.length === 0) {
       setSettingsError('กรุณาเลือกอย่างน้อย 1 วันทำงาน')
@@ -189,8 +190,24 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
       setSettingsError('Target date ต้องไม่ก่อนวันเริ่มโครงการ')
       return
     }
-    updateProject(activeProject.id, { targetDate: targetDateDraft, calendar: { workingDays: workingDaysDraft, holidays: holidaysDraft }, milestones: milestonesDraft })
-    setShowProjectSettings(false)
+
+    setIsSavingSettings(true)
+    setSettingsError('')
+    try {
+      const response = await fetch(`/api/projects/${encodeURIComponent(activeProject.id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetDate: targetDateDraft, calendar: { workingDays: workingDaysDraft, holidays: holidaysDraft }, milestones: milestonesDraft }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || 'Unable to save project settings.')
+      updateProject(activeProject.id, result)
+      setShowProjectSettings(false)
+    } catch (error) {
+      setSettingsError(error instanceof Error ? error.message : 'Unable to save project settings.')
+    } finally {
+      setIsSavingSettings(false)
+    }
   }
 
   return (
@@ -300,7 +317,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
             </div>
           </div>
           {settingsError && <p style={{ margin:'16px 0 0', color:'#B91C1C', fontSize:12 }}>{settingsError}</p>}
-          <div style={{ display:'flex', justifyContent:'end', gap:8, marginTop:22 }}><button type="button" onClick={() => setShowProjectSettings(false)} style={{ border:'1px solid #D8DEE9', borderRadius:8, padding:'9px 14px', cursor:'pointer', background:'#FFFFFF', color:'#475467', fontSize:12, fontWeight:700 }}>Cancel</button><button type="button" onClick={saveProjectSettings} style={{ border:'none', borderRadius:8, padding:'9px 14px', cursor:'pointer', background:'linear-gradient(135deg,#335CFF,#6D5CE7)', color:'#FFFFFF', fontSize:12, fontWeight:800 }}>Save Schedule</button></div>
+          <div style={{ display:'flex', justifyContent:'end', gap:8, marginTop:22 }}><button type="button" disabled={isSavingSettings} onClick={() => setShowProjectSettings(false)} style={{ border:'1px solid #D8DEE9', borderRadius:8, padding:'9px 14px', cursor:isSavingSettings ? 'not-allowed' : 'pointer', background:'#FFFFFF', color:'#475467', fontSize:12, fontWeight:700, opacity:isSavingSettings ? .6 : 1 }}>Cancel</button><button type="button" disabled={isSavingSettings} onClick={saveProjectSettings} style={{ border:'none', borderRadius:8, padding:'9px 14px', cursor:isSavingSettings ? 'not-allowed' : 'pointer', background:'linear-gradient(135deg,#335CFF,#6D5CE7)', color:'#FFFFFF', fontSize:12, fontWeight:800, opacity:isSavingSettings ? .7 : 1 }}>{isSavingSettings ? 'Saving...' : 'Save Schedule'}</button></div>
         </section>
       </div>
     )}
