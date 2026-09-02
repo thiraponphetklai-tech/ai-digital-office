@@ -13,7 +13,7 @@ import type {
 } from '@/types'
 import {
   MOCK_DIGITAL_OFFICE_PROJECT, MOCK_BITLOCKER_PROJECT, MOCK_M365_MIGRATION_PROJECT, MOCK_TASKS, MOCK_EVENTS, MOCK_ZONES,
-  MOCK_MESSAGES, DEFAULT_USER_PREFS,
+  DEFAULT_USER_PREFS,
 } from '@/data/mockData'
 
 async function persistTask(task: Task) {
@@ -411,50 +411,42 @@ export const usePrefsStore = create<PrefsStore>()(persist(set => ({
 // ── 7. CHAT STORE ─────────────────────────────────────────────────
 
 interface ChatStore {
-  messages:        ChatMessage[]
-  isTyping:        boolean
-  aiReplyIndex:    number
-  sendMessage:     (text: string) => void
-  receiveAiMessage:(text: string, quickReplies?: string[]) => void
-  setTyping:       (isTyping: boolean) => void
+  messagesByProject: Record<string, ChatMessage[]>
+  isTyping: boolean
+  sendMessage: (projectId: string, text: string) => void
+  receiveAiMessage: (projectId: string, text: string, quickReplies?: string[]) => void
+  setTyping: (isTyping: boolean) => void
+  clearConversation: (projectId: string) => void
 }
 
-export const useChatStore = create<ChatStore>(set => ({
-  messages:     MOCK_MESSAGES,
-  isTyping:     false,
-  aiReplyIndex: 0,
+export const useChatStore = create<ChatStore>()(persist(set => ({
+  messagesByProject: {},
+  isTyping: false,
 
-  sendMessage: (text) => {
+  sendMessage: (projectId, text) => {
     set(state => ({
-      messages: [...state.messages, {
-        id: `m-${Date.now()}`, role: 'me' as const,
-        text, timestamp: new Date().toISOString(),
-      }],
+      messagesByProject: { ...state.messagesByProject, [projectId]: [...(state.messagesByProject[projectId] ?? []), { id: `m-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, projectId, role: 'me' as const, text, timestamp: new Date().toISOString() }] },
       isTyping: true,
     }))
-    eventBus.emit({
-      id: `e-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, type: 'line.command_received',
-      projectId: usePrefsStore.getState().prefs.activeProjectId, timestamp: new Date().toISOString(),
-      message: `Manager: "${text.slice(0, 40)}${text.length > 40 ? '…' : ''}"`,
-      color: '#059669',
-    })
+    eventBus.emit({ id: `e-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, type: 'line.command_received', projectId, timestamp: new Date().toISOString(), message: `Manager: "${text.slice(0, 40)}${text.length > 40 ? '…' : ''}"`, color: '#059669' })
   },
 
   setTyping: (isTyping) => set({ isTyping }),
 
-  receiveAiMessage: (text, quickReplies) => {
+  receiveAiMessage: (projectId, text, quickReplies) => {
     set(state => ({
-      messages: [...state.messages, {
-        id: `m-${Date.now()}`, role: 'ai' as const,
-        text, timestamp: new Date().toISOString(), quickReplies,
-      }],
+      messagesByProject: { ...state.messagesByProject, [projectId]: [...(state.messagesByProject[projectId] ?? []), { id: `m-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, projectId, role: 'ai' as const, text, timestamp: new Date().toISOString(), quickReplies }] },
       isTyping: false,
     }))
-    eventBus.emit({
-      id: `e-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, type: 'line.report_sent',
-      projectId: usePrefsStore.getState().prefs.activeProjectId, timestamp: new Date().toISOString(),
-      message: `AI: "${text.slice(0, 50)}${text.length > 50 ? '…' : ''}"`,
-      color: '#059669',
-    })
+    eventBus.emit({ id: `e-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, type: 'line.report_sent', projectId, timestamp: new Date().toISOString(), message: `AI: "${text.slice(0, 50)}${text.length > 50 ? '…' : ''}"`, color: '#059669' })
   },
+
+  clearConversation: (projectId) => set(state => {
+    const { [projectId]: _, ...messagesByProject } = state.messagesByProject
+    return { messagesByProject }
+  }),
+}), {
+  name: 'ai-digital-office-chat',
+  version: 1,
+  partialize: state => ({ messagesByProject: state.messagesByProject }),
 }))

@@ -186,6 +186,7 @@ export type MessageRole = 'me' | 'ai' | 'system'
 
 export interface ChatMessage {
   id: string
+  projectId?: string
   role: MessageRole
   text: string
   timestamp: string

@@ -169,9 +169,10 @@ function DNDBar({ onClose }: { onClose: () => void }) {
 
 // ── Main ChatPanel ────────────────────────────────────────────────
 export function ChatPanel({ height = 340 }: { height?: number | string }) {
-  const { messages, isTyping, sendMessage, receiveAiMessage, setTyping } = useChatStore()
+  const { messagesByProject, isTyping, sendMessage, receiveAiMessage, setTyping, clearConversation } = useChatStore()
   const { prefs, toggleDnd }  = usePrefsStore()
   const activeProjectId = prefs.activeProjectId
+  const messages = messagesByProject[activeProjectId] ?? []
 
   const [input,   setInput]   = useState('')
   const [chatMode, setChatMode] = useState<'line' | 'ai'>('ai')
@@ -183,10 +184,10 @@ export function ChatPanel({ height = 340 }: { height?: number | string }) {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight
   }, [messages, isTyping])
 
-  async function askAssistant(message: string) {
+  async function askAssistant(message: string, conversation = messages) {
     setTyping(true)
     try {
-      const history = messages.slice(-8).filter(item => item.role === 'me' || item.role === 'ai').map(item => ({ role: item.role === 'me' ? 'user' as const : 'assistant' as const, content: item.text }))
+      const history = conversation.slice(-16).filter(item => item.role === 'me' || item.role === 'ai').map(item => ({ role: item.role === 'me' ? 'user' as const : 'assistant' as const, content: item.text }))
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -194,23 +195,23 @@ export function ChatPanel({ height = 340 }: { height?: number | string }) {
       })
       const result = await response.json().catch(() => ({})) as { answer?: string; error?: string }
       if (!response.ok || !result.answer) throw new Error(result.error || 'AI assistant is temporarily unavailable.')
-      receiveAiMessage(result.answer)
+      receiveAiMessage(activeProjectId, result.answer)
     } catch (error) {
-      receiveAiMessage(error instanceof Error ? error.message : 'AI assistant is temporarily unavailable.')
+      receiveAiMessage(activeProjectId, error instanceof Error ? error.message : 'AI assistant is temporarily unavailable.')
     }
   }
 
   function send() {
     const val = input.trim()
     if (!val || isTyping) return
-    sendMessage(val)
+    sendMessage(activeProjectId, val)
     setInput('')
     void askAssistant(val)
   }
 
   function handleQuickReply(qr: string) {
     if (isTyping) return
-    sendMessage(qr)
+    sendMessage(activeProjectId, qr)
     void askAssistant(qr)
   }
 
@@ -235,10 +236,14 @@ export function ChatPanel({ height = 340 }: { height?: number | string }) {
           }}>🤖 AI Assistant</button>
         </div>
         <div style={{ display:'flex', gap:6 }}>
-          <button onClick={() => receiveAiMessage('ผมช่วยสรุปงาน, ติดตามงาน, จัดลำดับความสำคัญ และจำลองการส่ง follow-up ได้ครับ') } style={{
+          <button onClick={() => { if (!isTyping) { const prompt = 'คุณช่วยอะไรเกี่ยวกับโครงการนี้ได้บ้าง?'; sendMessage(activeProjectId, prompt); void askAssistant(prompt) } }} style={{
             fontSize:10, padding:'4px 8px', borderRadius:8, cursor:'pointer',
             background:'#EEF2FF', border:'1px solid #C7D2FE', color:'#4F46E5', fontWeight:650,
           }}>🤖 Help</button>
+          <button onClick={() => clearConversation(activeProjectId)} title="Start a new conversation for this project" style={{
+            fontSize:10, padding:'4px 8px', borderRadius:8, cursor:'pointer',
+            background:'#F8FAFC', border:'1px solid #E4E7EC', color:'#667085', fontWeight:600,
+          }}>New chat</button>
           <button onClick={() => setInput('สร้าง task: ')} style={{
             fontSize:10, padding:'4px 8px', borderRadius:8, cursor:'pointer',
             background:'#ECFDF5', border:'1px solid #A7F3D0', color:'#047857', fontWeight:650,

@@ -405,14 +405,15 @@ function Sidebar({ view, onViewChange }: { view: 'office'|'board'|'timeline'|'ca
 function Panel3D() {
   const { viewMode, setViewMode, aiRobotActive, setAiRobotActive } = useOfficeStore()
   const { tasks } = useTaskStore()
-  const { isTyping, receiveAiMessage } = useChatStore()
+  const { receiveAiMessage } = useChatStore()
+  const activeProjectId = usePrefsStore(s => s.prefs.activeProjectId)
 
   // MockAgentService — Phase 2 จะ swap เป็น RealAgentService
   const agent = React.useMemo(() => new MockAgentService({
-    onMessage:     (text, qr) => receiveAiMessage(text, qr),
+    onMessage:     (text, qr) => receiveAiMessage(activeProjectId, text, qr),
     onTyping:      () => {},
     onRobotActive: (active) => setAiRobotActive(active),
-  }), [])
+  }), [activeProjectId, receiveAiMessage, setAiRobotActive])
 
   function handleReview() {
     if (aiRobotActive) return

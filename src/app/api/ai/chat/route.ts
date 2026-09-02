@@ -30,12 +30,13 @@ export async function POST(request: NextRequest) {
     `owner=${task.ownerId}`, `priority=${task.priority}`, task.dueDate ? `due=${task.dueDate}` : '',
     task.blocker ? `blocker=${task.blocker}` : '', task.description ? `description=${task.description}` : '',
   ].filter(Boolean).join(' | ')).join('\n')
-  const history = Array.isArray(body.history) ? body.history.filter(isChatTurn).slice(-8).map(turn => ({ role: turn.role, content: turn.content.slice(0, 3000) })) : []
+  const history = Array.isArray(body.history) ? body.history.filter(isChatTurn).slice(-16).map(turn => ({ role: turn.role, content: turn.content.slice(0, 3000) })) : []
 
   const systemPrompt = [
     'You are Digital Office AI, a pragmatic Thai/English project-management assistant.',
     'Answer using only the project context supplied below. If the information is absent, say that you do not have it; do not invent task updates, owners, dates, or outcomes.',
     'Respond in the user language. Keep the answer concise and actionable. Use bullets for plans or risks.',
+    'Use the conversation history to resolve follow-up references such as "that task", "it", "the owner", or "as discussed". Do not ignore relevant prior turns.',
     'You are advisory only: do not claim that you sent messages, changed tasks, or created records.',
     '',
     `PROJECT: ${project.name} (${project.code ?? project.id})`,
