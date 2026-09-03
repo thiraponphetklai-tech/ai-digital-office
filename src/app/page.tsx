@@ -81,6 +81,8 @@ const LEGEND = [
   { label:'Todo',        dot:'#9CA3AF' },
 ]
 
+const toolMenuButton: React.CSSProperties = { display:'block', width:'100%', border:'none', borderRadius:7, padding:'9px 10px', background:'transparent', color:'#344054', cursor:'pointer', fontSize:12, fontWeight:650, textAlign:'left' }
+
 const EVENT_ICON: Record<string, string> = {
   'task.blocked':        '🔴',
   'task.completed':      '✅',
@@ -102,6 +104,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
   const [showLineUpdate, setShowLineUpdate] = React.useState(false)
   const [showProjectSettings, setShowProjectSettings] = React.useState(false)
   const [showResources, setShowResources] = React.useState(false)
+  const [showTools, setShowTools] = React.useState(false)
   const [showUsers, setShowUsers] = React.useState(false)
   const [currentUser, setCurrentUser] = React.useState<{ displayName: string; systemRole: string } | null>(null)
   React.useEffect(() => { void fetch('/api/auth/me').then(response => response.ok ? response.json() : null).then(data => setCurrentUser(data?.user ?? null)) }, [])
@@ -216,11 +219,9 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
 
   return (
     <>
-    <header style={{
-      height: 52, background: T.surface,
-      borderBottom: `1px solid ${T.border}`,
-      display: 'flex', alignItems: 'center',
-      padding: '0 20px', gap: 12, flexShrink: 0,
+    <header className="app-topbar" style={{
+      background: T.surface, borderBottom: `1px solid ${T.border}`,
+      display: 'flex', alignItems: 'center', padding: '9px 20px', gap: 12, flexShrink: 0,
       boxShadow: '0 1px 8px #4F46E510',
     }}>
       {/* Logo */}
@@ -258,21 +259,15 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
         <span style={{ color:T.textMuted, fontSize:10 }}>▾</span>
       </div>
 
-      <button onClick={openProjectSettings} disabled={!activeProject} style={{
-        border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', background:T.surface, color:T.indigo,
-        cursor: activeProject ? 'pointer' : 'not-allowed', fontSize:11, fontWeight:700, opacity: activeProject ? 1 : .5,
-      }}>Project Settings</button>
-
-      <button onClick={() => setShowResources(true)} disabled={!activeProject} style={{
-        border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', background:T.surface, color:T.indigo,
-        cursor: activeProject ? 'pointer' : 'not-allowed', fontSize:11, fontWeight:700, opacity: activeProject ? 1 : .5,
-      }}>Resources / Players</button>
-
-      <button onClick={openLineUpdate} disabled={!activeProject} style={{
-        border:'1px solid #A7F3D0', borderRadius:8, padding:'6px 10px', background:'#F0FDF4', color:'#047857',
-        cursor: activeProject ? 'pointer' : 'not-allowed', fontSize:11, fontWeight:700, opacity: activeProject ? 1 : .5,
-      }}>Update LINE</button>
-      {currentUser?.systemRole === 'SYSTEM_ADMIN' && <button onClick={() => setShowUsers(true)} style={{ border:'1px solid #C7D2FE', borderRadius:8, padding:'6px 10px', background:'#EEF2FF', color:'#4338CA', cursor:'pointer', fontSize:11, fontWeight:700 }}>Users</button>}
+      <div style={{ position:'relative' }}>
+        <button onClick={() => setShowTools(current => !current)} disabled={!activeProject} style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', background:T.surface, color:T.indigo, cursor:activeProject ? 'pointer' : 'not-allowed', fontSize:11, fontWeight:700, opacity:activeProject ? 1 : .5 }}>Project tools ▾</button>
+        {showTools && activeProject && <div style={{ position:'absolute', top:34, left:0, zIndex:40, minWidth:185, padding:6, border:`1px solid ${T.border}`, borderRadius:10, background:'#FFFFFF', boxShadow:'0 12px 30px rgba(16,24,40,.14)' }}>
+          <button onClick={() => { setShowTools(false); openProjectSettings() }} style={toolMenuButton}>Schedule & calendar</button>
+          <button onClick={() => { setShowTools(false); setShowResources(true) }} style={toolMenuButton}>Resources & players</button>
+          <button onClick={() => { setShowTools(false); openLineUpdate() }} style={{ ...toolMenuButton, color:'#047857' }}>Send LINE update</button>
+          {currentUser?.systemRole === 'SYSTEM_ADMIN' && <button onClick={() => { setShowTools(false); setShowUsers(true) }} style={{ ...toolMenuButton, color:'#4338CA' }}>User management</button>}
+        </div>}
+      </div>
 
       <div style={{ flex:1 }} />
 
@@ -291,7 +286,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
       )}
 
       {/* AI status */}
-      {currentUser && <button onClick={() => { void fetch('/api/auth/logout', { method:'POST' }).finally(() => window.location.reload()) }} style={{ border:'1px solid #E4E7EC', borderRadius:8, padding:'5px 9px', background:'#FFFFFF', color:'#667085', cursor:'pointer', fontSize:11, fontWeight:700 }} title={`Signed in as ${currentUser.displayName}`}>Sign out</button>}
+      {currentUser && <div className="account-actions" style={{ display:'flex', alignItems:'center', gap:6 }}><span style={{ maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color:T.textSub, fontSize:11, fontWeight:700 }} title={currentUser.displayName}>{currentUser.displayName}</span><button onClick={() => { void fetch('/api/auth/logout', { method:'POST' }).finally(() => window.location.reload()) }} style={{ border:'1px solid #E4E7EC', borderRadius:8, padding:'5px 9px', background:'#FFFFFF', color:'#667085', cursor:'pointer', fontSize:11, fontWeight:700 }}>Sign out</button></div>}
 
       <button onClick={() => toggleDnd(2)} style={{
         display:'flex', alignItems:'center', gap:6,
@@ -621,6 +616,23 @@ export default function AIDigitalOffice() {
     <>
       <ApiDataHydrator />
       <style>{`
+        .app-topbar { min-height:52px; }
+        .workspace-content { min-width:0; }
+        @media (max-width: 1180px) {
+          .app-topbar { gap:8px !important; padding:8px 12px !important; }
+          .app-topbar > :first-child > div:nth-child(2), .app-topbar > :first-child > span { display:none; }
+          .account-actions > span { display:none; }
+        }
+        @media (max-width: 920px) {
+          .app-topbar > button[title] { font-size:0 !important; padding:7px 9px !important; }
+          .app-topbar > button[title]::after { content:'Projects'; font-size:11px; }
+          .workspace-content { overflow:auto !important; }
+        }
+        @media (max-width: 760px) {
+          .app-topbar { flex-wrap:wrap; }
+          .app-topbar > div:nth-child(2) { order:3; flex:1; }
+          .app-topbar > div:nth-child(2) > span:nth-child(2) { max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        }
         @keyframes pulseDesk {
           0%,100% { box-shadow:0 2px 10px #FCA5A560; }
           50%      { box-shadow:0 2px 20px #EF444480; }
@@ -642,7 +654,7 @@ export default function AIDigitalOffice() {
         <Topbar onOpenProjectHub={() => setShowHub(true)} />
         <div style={{ display:'flex', flex:1, overflow:'hidden' }}>
           <Sidebar view={view} onViewChange={setView} />
-          <div style={{ display:'flex', flex:1, overflow:'hidden' }}>
+          <div className="workspace-content" style={{ display:'flex', flex:1, overflow:'hidden' }}>
             {view === 'board' ? (
               <TaskBoard />
             ) : view === 'timeline' ? (
@@ -656,8 +668,8 @@ export default function AIDigitalOffice() {
             ) : (
               <>
                 <ProjectOverviewDashboard />
-                <div style={{
-                  width:380, flexShrink:0, display:'flex', flexDirection:'column', overflow:'hidden',
+                <div className="assistant-panel" style={{
+                  width:'clamp(320px, 28vw, 380px)', flexShrink:0, display:'flex', flexDirection:'column', overflow:'hidden',
                   background:T.surface, borderLeft:`1px solid ${T.border}`,
                   boxShadow:'-2px 0 12px #4F46E510',
                 }}>

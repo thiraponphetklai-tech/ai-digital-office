@@ -175,7 +175,6 @@ export function ChatPanel({ height = 340 }: { height?: number | string }) {
   const messages = messagesByProject[activeProjectId] ?? []
 
   const [input,   setInput]   = useState('')
-  const [chatMode, setChatMode] = useState<'line' | 'ai'>('ai')
   const [confirm, setConfirm] = useState<ConfirmDialog | null>(null)
   const [showDnd, setShowDnd] = useState(false)
   const bodyRef  = useRef<HTMLDivElement>(null)
@@ -225,44 +224,13 @@ export function ChatPanel({ height = 340 }: { height?: number | string }) {
       {/* Header */}
       <div style={{ padding:'9px 14px 8px', borderBottom:'1px solid #E5EAF2',
         flexShrink:0, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:5, background: chatMode === 'line' ? '#ECFDF3' : '#F5F3FF', borderRadius:9, padding:3 }}>
-          <button onClick={() => setChatMode('line')} style={{
-            fontSize:10, padding:'5px 8px', borderRadius:7, cursor:'pointer', border:'none', fontWeight:750,
-            background: chatMode === 'line' ? '#12B76A' : 'transparent', color: chatMode === 'line' ? '#FFFFFF' : '#067647',
-          }}>LINE Chat</button>
-          <button onClick={() => setChatMode('ai')} style={{
-            fontSize:10, padding:'5px 8px', borderRadius:7, cursor:'pointer', border:'none', fontWeight:750,
-            background: chatMode === 'ai' ? '#7C3AED' : 'transparent', color: chatMode === 'ai' ? '#FFFFFF' : '#6D28D9',
-          }}>🤖 AI Assistant</button>
-        </div>
+        <div><div style={{ fontSize:12, fontWeight:800, color:'#344054' }}>AI Project Assistant</div><div style={{ marginTop:2, fontSize:10, color:'#667085' }}>Ask about progress, risk, or next actions</div></div>
         <div style={{ display:'flex', gap:6 }}>
-          <button onClick={() => { if (!isTyping) { const prompt = 'คุณช่วยอะไรเกี่ยวกับโครงการนี้ได้บ้าง?'; sendMessage(activeProjectId, prompt); void askAssistant(prompt) } }} style={{
-            fontSize:10, padding:'4px 8px', borderRadius:8, cursor:'pointer',
-            background:'#EEF2FF', border:'1px solid #C7D2FE', color:'#4F46E5', fontWeight:650,
-          }}>🤖 Help</button>
-          <button onClick={() => clearConversation(activeProjectId)} title="Start a new conversation for this project" style={{
-            fontSize:10, padding:'4px 8px', borderRadius:8, cursor:'pointer',
-            background:'#F8FAFC', border:'1px solid #E4E7EC', color:'#667085', fontWeight:600,
-          }}>New chat</button>
-          <button onClick={() => setInput('สร้าง task: ')} style={{
-            fontSize:10, padding:'4px 8px', borderRadius:8, cursor:'pointer',
-            background:'#ECFDF5', border:'1px solid #A7F3D0', color:'#047857', fontWeight:650,
-          }}>＋ Task</button>
-          {prefs.dndMode ? (
-            <button onClick={() => toggleDnd()} style={{
-              fontSize:10, padding:'4px 8px', borderRadius:8, cursor:'pointer',
-              background:'#FFFBEB', border:'1px solid #FDE68A', color:'#B54708', fontWeight:650,
-            }}>🔔 เปิดแจ้งเตือน</button>
-          ) : (
-            <button onClick={() => setShowDnd(true)} style={{
-              fontSize:10, padding:'4px 8px', borderRadius:8, cursor:'pointer',
-              background:'#F8FAFC', border:'1px solid #E4E7EC', color:'#667085', fontWeight:600,
-            }}>🔕 DND</button>
-          )}
+          <button onClick={() => clearConversation(activeProjectId)} title="Start a new conversation for this project" style={{ fontSize:10, padding:'5px 8px', borderRadius:8, cursor:'pointer', background:'#F8FAFC', border:'1px solid #E4E7EC', color:'#667085', fontWeight:600 }}>New chat</button>
+          {prefs.dndMode ? <button onClick={() => toggleDnd()} style={{ fontSize:10, padding:'5px 8px', borderRadius:8, cursor:'pointer', background:'#FFFBEB', border:'1px solid #FDE68A', color:'#B54708', fontWeight:650 }}>Notifications off</button> : <button onClick={() => setShowDnd(true)} style={{ fontSize:10, padding:'5px 8px', borderRadius:8, cursor:'pointer', background:'#F8FAFC', border:'1px solid #E4E7EC', color:'#667085', fontWeight:600 }}>DND</button>}
         </div>
       </div>
 
-      {chatMode === 'ai' ? (
         <div style={{ display:'flex', gap:6, padding:'7px 12px', overflowX:'auto', borderBottom:'1px solid #E9D5FF', background:'#FAF5FF', flexShrink:0 }}>
           {[
             ['📅 นัดหมายหัวหน้า', 'นัดหมายหัวหน้าเพื่ออัปเดตโครงการ'],
@@ -276,11 +244,6 @@ export function ChatPanel({ height = 340 }: { height?: number | string }) {
             }}>{label}</button>
           ))}
         </div>
-      ) : (
-        <div style={{ padding:'8px 12px', borderBottom:'1px solid #BBF7D0', background:'#F0FDF4', color:'#067647', fontSize:10, fontWeight:650, flexShrink:0 }}>
-          LINE Chat สำหรับรับข้อความและติดตามงานกับทีม
-        </div>
-      )}
 
       {/* Messages */}
       <div ref={bodyRef} style={{ flex:1, overflowY:'auto', padding:'10px 12px',

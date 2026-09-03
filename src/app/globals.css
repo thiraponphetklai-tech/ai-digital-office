@@ -11,3 +11,28 @@ body {
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #C7D2FE; border-radius: 2px; }
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 3px solid rgba(79, 70, 229, .28);
+  outline-offset: 2px;
+}
+
+@media (max-width: 960px) {
+  .overview-dashboard { padding: 18px !important; }
+  .overview-hero { align-items: stretch !important; flex-direction: column; }
+  .overview-progress-card { min-width: 0 !important; }
+  .assistant-panel { width: 320px !important; }
+  .user-create-form { grid-template-columns: repeat(2, minmax(180px, 1fr)) !important; }
+}
+
+@media (max-width: 680px) {
+  body { overflow: auto; }
+  .overview-dashboard { padding: 14px !important; }
+  .overview-schedule-stats { grid-template-columns: repeat(2, minmax(120px, 1fr)) !important; }
+  .assistant-panel { display: none !important; }
+  .user-create-form { grid-template-columns: 1fr !important; }
+}
