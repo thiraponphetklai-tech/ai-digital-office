@@ -78,7 +78,7 @@ async function main() {
     }
   }
 
-  console.log(`Seeded ${projects.length} projects, ${resources.length} resources, ${MOCK_TASKS.filter(task => projects.some(project => project.id === task.projectId)).length} tasks, and ${initialUsers.length} local users.`)
+  console.log(`Ensured ${projects.length} projects, ${resources.length} resources, ${MOCK_TASKS.filter(task => projects.some(project => project.id === task.projectId)).length} tasks, and ${initialUsers.length} local users without overwriting existing operational data.`)
 }
 
 main().finally(() => db.$disconnect())
