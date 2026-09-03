@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { hashPassword } from '../src/lib/localAuth'
 import { MOCK_BITLOCKER_PROJECT, MOCK_DIGITAL_OFFICE_PROJECT, MOCK_M365_MIGRATION_PROJECT, MOCK_TASKS } from '../src/data/mockData'
 
 const db = new PrismaClient()
@@ -50,7 +51,31 @@ async function main() {
     })
   }
 
-  console.log(`Seeded ${projects.length} projects, ${resources.length} resources, and ${MOCK_TASKS.filter(task => projects.some(project => project.id === task.projectId)).length} tasks.`)
+  const initialPassword = process.env.LOCAL_INITIAL_TEMP_PASSWORD
+  if (!initialPassword || initialPassword.length < 12) throw new Error('Set LOCAL_INITIAL_TEMP_PASSWORD to a value of at least 12 characters before seeding local users.')
+  const expiresAt = new Date(Date.now() + 7 * 86400000)
+  const initialUsers = [
+    { username: 'admin', displayName: 'System Administrator', systemRole: 'SYSTEM_ADMIN' as const, resourceId: undefined },
+    { username: 'nan', displayName: 'นัน', systemRole: 'STANDARD_USER' as const, resourceId: 'u6' },
+    { username: 'gat', displayName: 'แกท', systemRole: 'STANDARD_USER' as const, resourceId: 'u4' },
+    { username: 'ben', displayName: 'เบ้น', systemRole: 'STANDARD_USER' as const, resourceId: 'u1' },
+    { username: 'bel', displayName: 'เบล', systemRole: 'STANDARD_USER' as const, resourceId: 'u2' },
+    { username: 'boy', displayName: 'บอย', systemRole: 'STANDARD_USER' as const, resourceId: 'u3' },
+    { username: 'off', displayName: 'ออฟ', systemRole: 'STANDARD_USER' as const, resourceId: 'u5' },
+  ]
+  for (const account of initialUsers) {
+    const user = await db.user.upsert({
+      where: { username: account.username },
+      update: { displayName: account.displayName, systemRole: account.systemRole, resourceId: account.resourceId, active: true },
+      create: { ...account, passwordHash: await hashPassword(initialPassword), mustChangePassword: true, temporaryPasswordExpiresAt: expiresAt, active: true },
+    })
+    const role = account.username === 'nan' ? 'PROJECT_MANAGER' : account.username === 'gat' ? 'TEAM_LEAD' : 'CONTRIBUTOR'
+    for (const project of projects) {
+      await db.projectUserMember.upsert({ where: { projectId_userId: { projectId: project.id, userId: user.id } }, update: { role }, create: { projectId: project.id, userId: user.id, role } })
+    }
+  }
+
+  console.log(`Seeded ${projects.length} projects, ${resources.length} resources, ${MOCK_TASKS.filter(task => projects.some(project => project.id === task.projectId)).length} tasks, and ${initialUsers.length} local users.`)
 }
 
 main().finally(() => db.$disconnect())

@@ -16,6 +16,7 @@ import { ProjectResourcesDialog } from '@/components/ProjectResourcesDialog'
 import { ResourceWorkloadView } from '@/components/ResourceWorkloadView'
 import { ProjectCalendarView } from '@/components/ProjectCalendarView'
 import { ProjectGanttView } from '@/components/ProjectGanttView'
+import { UserManagementDialog } from '@/components/UserManagementDialog'
 
 // OfficeScene ใช้ Three.js — ต้อง dynamic import (ไม่รัน SSR)
 const OfficeScene = dynamic(
@@ -101,6 +102,9 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
   const [showLineUpdate, setShowLineUpdate] = React.useState(false)
   const [showProjectSettings, setShowProjectSettings] = React.useState(false)
   const [showResources, setShowResources] = React.useState(false)
+  const [showUsers, setShowUsers] = React.useState(false)
+  const [currentUser, setCurrentUser] = React.useState<{ displayName: string; systemRole: string } | null>(null)
+  React.useEffect(() => { void fetch('/api/auth/me').then(response => response.ok ? response.json() : null).then(data => setCurrentUser(data?.user ?? null)) }, [])
   const [targetDateDraft, setTargetDateDraft] = React.useState('')
   const [workingDaysDraft, setWorkingDaysDraft] = React.useState<number[]>([])
   const [holidaysDraft, setHolidaysDraft] = React.useState<{ date: string; name: string }[]>([])
@@ -268,6 +272,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
         border:'1px solid #A7F3D0', borderRadius:8, padding:'6px 10px', background:'#F0FDF4', color:'#047857',
         cursor: activeProject ? 'pointer' : 'not-allowed', fontSize:11, fontWeight:700, opacity: activeProject ? 1 : .5,
       }}>Update LINE</button>
+      {currentUser?.systemRole === 'SYSTEM_ADMIN' && <button onClick={() => setShowUsers(true)} style={{ border:'1px solid #C7D2FE', borderRadius:8, padding:'6px 10px', background:'#EEF2FF', color:'#4338CA', cursor:'pointer', fontSize:11, fontWeight:700 }}>Users</button>}
 
       <div style={{ flex:1 }} />
 
@@ -286,6 +291,8 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
       )}
 
       {/* AI status */}
+      {currentUser && <button onClick={() => { void fetch('/api/auth/logout', { method:'POST' }).finally(() => window.location.reload()) }} style={{ border:'1px solid #E4E7EC', borderRadius:8, padding:'5px 9px', background:'#FFFFFF', color:'#667085', cursor:'pointer', fontSize:11, fontWeight:700 }} title={`Signed in as ${currentUser.displayName}`}>Sign out</button>}
+
       <button onClick={() => toggleDnd(2)} style={{
         display:'flex', alignItems:'center', gap:6,
         background: prefs.dndMode ? T.amberBg : T.greenBg,
@@ -299,6 +306,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
       </button>
     </header>
     {showResources && activeProject && <ProjectResourcesDialog projectId={activeProject.id} onClose={() => setShowResources(false)} />}
+    {showUsers && <UserManagementDialog onClose={() => setShowUsers(false)} />}
     {showProjectSettings && activeProject && (
       <div style={{ position:'fixed', inset:0, zIndex:50, background:'rgba(15,23,42,.38)', display:'grid', placeItems:'center', padding:20 }}>
         <section role="dialog" aria-modal="true" aria-labelledby="project-settings-title" style={{ width:'min(620px, 100%)', maxHeight:'calc(100vh - 40px)', overflowY:'auto', background:'#FFFFFF', borderRadius:16, padding:24, boxShadow:'0 24px 64px rgba(15,23,42,.26)' }}>
