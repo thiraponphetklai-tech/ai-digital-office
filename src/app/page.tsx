@@ -349,57 +349,41 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
 }
 
 // ── Sidebar ───────────────────────────────────────────────────────
-function Sidebar({ view, onViewChange }: { view: 'office'|'board'|'timeline'|'calendar'|'gantt'|'resources'; onViewChange: (v:'office'|'board'|'timeline'|'calendar'|'gantt'|'resources')=>void }) {
-  const navItems = [
-    { icon:'▦', label:'Project Overview', key:'office' as const },
-    { icon:'☰', label:'Task Board',     key:'board'  as const },
-    { icon:'◫', label:'Timeline',       key:'timeline' as const },
-    { icon:'▣', label:'Calendar',       key:'calendar' as const },
-    { icon:'▤', label:'Gantt / Project Plan', key:'gantt' as const },
+type WorkspaceView = 'office' | 'board' | 'timeline' | 'calendar' | 'gantt' | 'resources'
+type SidebarItem = { icon: string; label: string; description: string; key: WorkspaceView }
+
+function Sidebar({ view, onViewChange }: { view: WorkspaceView; onViewChange: (v: WorkspaceView)=>void }) {
+  const [collapsed, setCollapsed] = React.useState(false)
+  const workspaceItems: SidebarItem[] = [
+    { icon:'▦', label:'Overview', description:'Project health', key:'office' as const },
+    { icon:'☷', label:'Task board', description:'Manage tasks', key:'board' as const },
+    { icon:'◫', label:'Timeline', description:'Milestones', key:'timeline' as const },
   ]
-  const bottomItems = [{ icon:'◎', label:'Resource Workload', key:'resources' as const }, { icon:'⊞', label:'Reports', key:null }]
+  const planningItems: SidebarItem[] = [
+    { icon:'▣', label:'Calendar', description:'Project dates', key:'calendar' as const },
+    { icon:'▤', label:'Gantt plan', description:'Schedule view', key:'gantt' as const },
+    { icon:'◎', label:'Workload', description:'Team capacity', key:'resources' as const },
+  ]
+  const NavItem = ({ item }: { item: SidebarItem }) => {
+    const active = item.key === view
+    return <button key={item.label} title={collapsed ? `${item.label} — ${item.description}` : undefined} onClick={() => onViewChange(item.key)} style={{ width:'100%', minHeight:42, padding:collapsed ? '0 9px' : '7px 10px', borderRadius:9, background:active ? T.indigoBg : 'transparent', color:active ? T.indigo : T.textSub, border:`1px solid ${active ? T.borderMid : 'transparent'}`, cursor:'pointer', display:'flex', alignItems:'center', gap:10, textAlign:'left', transition:'background .15s, border-color .15s' }}>
+      <span style={{ width:22, textAlign:'center', fontSize:17, lineHeight:1, fontWeight:700, flexShrink:0 }}>{item.icon}</span>
+      {!collapsed && <span style={{ minWidth:0 }}><span style={{ display:'block', fontSize:12, fontWeight:active ? 800 : 700, lineHeight:1.1 }}>{item.label}</span><span style={{ display:'block', marginTop:3, color:active ? '#6366F1' : T.textMuted, fontSize:10, lineHeight:1.1 }}>{item.description}</span></span>}
+    </button>
+  }
   return (
-    <nav style={{
-      width:58, background:T.surface,
-      borderRight:`1px solid ${T.border}`,
-      display:'flex', flexDirection:'column', alignItems:'center',
-      padding:'10px 0', gap:4, flexShrink:0,
-    }}>
-      {navItems.map(item => (
-        <button key={item.label} title={item.label}
-          onClick={() => item.key && onViewChange(item.key)}
-          style={{
-            width:40, height:40, borderRadius:10,
-            background: item.key === view ? T.indigo : 'transparent',
-            color: item.key === view ? '#fff' : T.textMuted,
-            border:'none', cursor: item.key ? 'pointer' : 'default', fontSize:17,
-            display:'flex', alignItems:'center', justifyContent:'center',
-            boxShadow: item.key === view ? '0 2px 8px #4F46E540' : 'none',
-            transition:'all .15s',
-          }}>{item.icon}</button>
-      ))}
-      <a href="/worksheet" title="Work Sheet" style={{
-        width:40, height:40, borderRadius:10, background:'transparent', color:T.textMuted,
-        textDecoration:'none', fontSize:17, display:'flex', alignItems:'center', justifyContent:'center',
-      }}>▦</a>
-      <div style={{ width:28, height:1, background:T.border, margin:'6px 0' }} />
-      {bottomItems.map(item => (
-        <button key={item.label} title={item.label} onClick={() => item.key && onViewChange(item.key)} style={{
-          width:40, height:40, borderRadius:10, background:item.key === view ? T.indigo : 'transparent',
-          color:item.key === view ? '#FFFFFF' : T.textMuted, border:'none', cursor:item.key ? 'pointer' : 'default', fontSize:17,
-          display:'flex', alignItems:'center', justifyContent:'center',
-        }}>{item.icon}</button>
-      ))}
+    <nav className={`app-sidebar ${collapsed ? 'is-collapsed' : ''}`} style={{ width:collapsed ? 62 : 204, background:T.surface, borderRight:`1px solid ${T.border}`, display:'flex', flexDirection:'column', padding:'12px 10px', gap:4, flexShrink:0, transition:'width .18s ease', overflow:'hidden' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:collapsed ? 'center' : 'space-between', minHeight:28, margin:'0 2px 8px' }}>
+        {!collapsed && <span style={{ color:T.textMuted, fontSize:10, fontWeight:800, letterSpacing:'.1em' }}>WORKSPACE</span>}
+        <button type="button" onClick={() => setCollapsed(current => !current)} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'} title={collapsed ? 'Expand navigation' : 'Collapse navigation'} style={{ width:28, height:28, border:'1px solid '+T.border, borderRadius:7, background:'#FFFFFF', color:T.indigo, cursor:'pointer', fontSize:14, fontWeight:800 }}>{collapsed ? '›' : '‹'}</button>
+      </div>
+      {workspaceItems.map(item => <NavItem key={item.key} item={item} />)}
+      <div style={{ height:1, background:T.border, margin:'10px 2px 8px' }} />
+      {!collapsed && <span style={{ margin:'0 2px 5px', color:T.textMuted, fontSize:10, fontWeight:800, letterSpacing:'.1em' }}>PLAN & CAPACITY</span>}
+      {planningItems.map(item => <NavItem key={item.key} item={item} />)}
+      <a href="/worksheet" title={collapsed ? 'Work sheet — tabular task editing' : undefined} style={{ width:'100%', minHeight:42, padding:collapsed ? '0 9px' : '7px 10px', borderRadius:9, color:T.textSub, textDecoration:'none', display:'flex', alignItems:'center', gap:10 }}><span style={{ width:22, textAlign:'center', fontSize:17, fontWeight:700 }}>⌑</span>{!collapsed && <span><span style={{ display:'block', fontSize:12, fontWeight:700, lineHeight:1.1 }}>Work sheet</span><span style={{ display:'block', marginTop:3, color:T.textMuted, fontSize:10, lineHeight:1.1 }}>Tabular task editing</span></span>}</a>
       <div style={{ flex:1 }} />
-      <div style={{ width:28, height:1, background:T.border, margin:'6px 0' }} />
-      <button title="Settings" style={{ width:40,height:40,borderRadius:10,background:'transparent',color:T.textMuted,border:'none',cursor:'pointer',fontSize:17,display:'flex',alignItems:'center',justifyContent:'center' }}>⚙</button>
-      <div style={{
-        width:32, height:32, borderRadius:'50%',
-        background:'linear-gradient(135deg,#4F46E5,#7C3AED)',
-        display:'flex', alignItems:'center', justifyContent:'center',
-        fontSize:11, fontWeight:700, color:'#fff', cursor:'pointer',
-        boxShadow:'0 2px 6px #4F46E540',
-      }}>TL</div>
+      {!collapsed && <div style={{ margin:'8px 2px 2px', padding:'9px 10px', borderRadius:10, background:T.surfaceAlt, border:`1px solid ${T.border}` }}><div style={{ color:T.indigo, fontSize:10, fontWeight:800 }}>TIP</div><div style={{ marginTop:3, color:T.textSub, fontSize:10, lineHeight:1.35 }}>Use the Task board for daily updates and Gantt plan for schedule review.</div></div>}
     </nav>
   )
 }
