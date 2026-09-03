@@ -17,16 +17,17 @@ async function main() {
   for (const resource of resources) {
     await db.resource.upsert({
       where: { id: resource.id },
-      update: { name: resource.name, type: resource.type, role: resource.role, skills: [], capacityHoursPerDay: 8, active: true },
+      update: {},
       create: { id: resource.id, name: resource.name, type: resource.type, role: resource.role, skills: [], capacityHoursPerDay: 8, active: true },
     })
   }
 
   const projects = [MOCK_BITLOCKER_PROJECT, MOCK_M365_MIGRATION_PROJECT, MOCK_DIGITAL_OFFICE_PROJECT]
   for (const project of projects) {
-    await db.project.delete({ where: { id: project.id } }).catch(() => undefined)
-    await db.project.create({
-      data: {
+    await db.project.upsert({
+      where: { id: project.id },
+      update: {},
+      create: {
         id: project.id, name: project.name, code: project.code, description: project.description, startDate: date(project.startDate), targetDate: date(project.targetDate), status: project.status,
         calendar: project.calendar ? { create: { workingDays: project.calendar.workingDays, holidays: { create: (project.calendar.holidays ?? []).map(holiday => ({ date: date(holiday.date), name: holiday.name })) } } } : undefined,
         metrics: { create: (project.metrics ?? []).map(metric => ({ label: metric.label, completed: metric.completed, total: metric.total, unit: metric.unit, detail: metric.detail })) },
@@ -38,8 +39,10 @@ async function main() {
   }
 
   for (const task of MOCK_TASKS.filter(task => projects.some(project => project.id === task.projectId))) {
-    await db.task.create({
-      data: {
+    await db.task.upsert({
+      where: { id: task.id },
+      update: {},
+      create: {
         id: task.id, projectId: task.projectId, title: task.title, description: task.description, ownerId: task.ownerId, teamId: task.teamId,
         status: task.status, priority: task.priority, progress: task.progress, riskLevel: task.riskLevel, blocker: task.blocker,
         startDate: task.startDate ? date(task.startDate) : undefined, plannedStartDate: task.plannedStartDate ? date(task.plannedStartDate) : undefined,
@@ -66,12 +69,12 @@ async function main() {
   for (const account of initialUsers) {
     const user = await db.user.upsert({
       where: { username: account.username },
-      update: { displayName: account.displayName, systemRole: account.systemRole, resourceId: account.resourceId, active: true },
+      update: {},
       create: { ...account, passwordHash: await hashPassword(initialPassword), mustChangePassword: true, temporaryPasswordExpiresAt: expiresAt, active: true },
     })
     const role = account.username === 'nan' ? 'PROJECT_MANAGER' : account.username === 'gat' ? 'TEAM_LEAD' : 'CONTRIBUTOR'
     for (const project of projects) {
-      await db.projectUserMember.upsert({ where: { projectId_userId: { projectId: project.id, userId: user.id } }, update: { role }, create: { projectId: project.id, userId: user.id, role } })
+      await db.projectUserMember.upsert({ where: { projectId_userId: { projectId: project.id, userId: user.id } }, update: {}, create: { projectId: project.id, userId: user.id, role } })
     }
   }
 
