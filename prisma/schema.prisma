@@ -98,6 +98,8 @@ model Resource {
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
   ownedTasks          Task[]       @relation("TaskOwner")
+  makerTasks          Task[]       @relation("TaskMaker")
+  checkerTasks        Task[]       @relation("TaskChecker")
   taskAssignments     TaskAssignee[]
   projectMemberships  ProjectMember[]
   projectAssignments  ProjectResource[]
@@ -214,6 +216,8 @@ model Task {
   title            String
   description      String?
   ownerId          String
+  makerId          String?
+  checkerId        String?
   teamId           String
   status           TaskStatus   @default(TODO)
   priority         TaskPriority @default(MEDIUM)
@@ -233,6 +237,8 @@ model Task {
   updatedAt        DateTime     @updatedAt
   project          Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   owner            Resource     @relation("TaskOwner", fields: [ownerId], references: [id])
+  maker            Resource?    @relation("TaskMaker", fields: [makerId], references: [id])
+  checker          Resource?    @relation("TaskChecker", fields: [checkerId], references: [id])
   assignees        TaskAssignee[]
   dependencies     TaskDependency[] @relation("TaskDependencies")
   dependents       TaskDependency[] @relation("TaskDependents")
@@ -240,6 +246,8 @@ model Task {
   @@index([projectId, status])
   @@index([projectId, dueDate])
   @@index([ownerId, status])
+  @@index([makerId])
+  @@index([checkerId])
 }
 
 model TaskAssignee {

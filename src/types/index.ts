@@ -15,6 +15,8 @@ export interface Task {
   title: string
   description?: string
   ownerId: string
+  makerId?: string
+  checkerId?: string
   assigneeIds?: string[]
   teamId: string
   status: TaskStatus

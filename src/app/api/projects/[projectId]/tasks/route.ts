@@ -16,7 +16,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!body.id || !body.title || !body.ownerId || !body.teamId) return NextResponse.json({ error: 'id, title, ownerId, and teamId are required' }, { status: 400 })
   const task = await db.task.create({
     data: {
-      id: body.id, projectId, title: body.title, description: body.description, ownerId: body.ownerId, teamId: body.teamId,
+      id: body.id, projectId, title: body.title, description: body.description, ownerId: body.ownerId, makerId: body.makerId || undefined, checkerId: body.checkerId || undefined, teamId: body.teamId,
       status: body.status ?? 'TODO', priority: body.priority ?? 'MEDIUM', riskLevel: body.riskLevel ?? 'NONE', progress: body.progress ?? 0,
       startDate: body.startDate ? new Date(body.startDate) : undefined, plannedStartDate: body.plannedStartDate ? new Date(body.plannedStartDate) : undefined,
       plannedEndDate: body.plannedEndDate ? new Date(body.plannedEndDate) : undefined, dueDate: body.dueDate ? new Date(body.dueDate) : undefined,

@@ -11,7 +11,7 @@ type DbProject = {
 }
 
 type DbTask = {
-  id: string; projectId: string; title: string; description: string | null; ownerId: string; teamId: string; status: Task['status']; priority: Task['priority']; progress: { toNumber(): number }; riskLevel: Task['riskLevel']; startDate: Date | null; plannedStartDate: Date | null; plannedEndDate: Date | null; estimatedHours: { toNumber(): number } | null; actualHours: { toNumber(): number } | null; dueDate: Date | null; blocker: string | null; completedAt: Date | null; updatedAt: Date; aiSummary: string | null; aiRiskAssessment: string | null
+  id: string; projectId: string; title: string; description: string | null; ownerId: string; makerId: string | null; checkerId: string | null; teamId: string; status: Task['status']; priority: Task['priority']; progress: { toNumber(): number }; riskLevel: Task['riskLevel']; startDate: Date | null; plannedStartDate: Date | null; plannedEndDate: Date | null; estimatedHours: { toNumber(): number } | null; actualHours: { toNumber(): number } | null; dueDate: Date | null; blocker: string | null; completedAt: Date | null; updatedAt: Date; aiSummary: string | null; aiRiskAssessment: string | null
   assignees: { resourceId: string }[]; dependencies: { dependsOnTaskId: string }[]
 }
 
@@ -28,7 +28,7 @@ export function mapProject(project: DbProject): Project {
 
 export function mapTask(task: DbTask): Task {
   return {
-    id: task.id, projectId: task.projectId, title: task.title, description: task.description ?? undefined, ownerId: task.ownerId, teamId: task.teamId,
+    id: task.id, projectId: task.projectId, title: task.title, description: task.description ?? undefined, ownerId: task.ownerId, makerId: task.makerId ?? undefined, checkerId: task.checkerId ?? undefined, teamId: task.teamId,
     status: task.status, priority: task.priority, progress: task.progress.toNumber(), riskLevel: task.riskLevel,
     startDate: isoDate(task.startDate), plannedStartDate: isoDate(task.plannedStartDate), plannedEndDate: isoDate(task.plannedEndDate), dueDate: isoDate(task.dueDate),
     estimatedHours: task.estimatedHours?.toNumber(), actualHours: task.actualHours?.toNumber(), blocker: task.blocker ?? undefined,

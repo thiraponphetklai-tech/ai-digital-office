@@ -18,7 +18,7 @@ const PRIORITY_CFG: Record<TaskPriority, { label: string; color: string }> = {
   CRITICAL: { label: 'Critical', color: '#DC2626' },
 }
 
-type SortKey = 'title' | 'status' | 'priority' | 'progress' | 'dueDate' | 'ownerId'
+type SortKey = 'title' | 'status' | 'priority' | 'progress' | 'dueDate' | 'ownerId' | 'makerId' | 'checkerId'
 
 export function WBSTable() {
   const { tasks, updateTaskStatus, updateTaskProgress, updateTaskDetails } = useTaskStore()
@@ -74,7 +74,7 @@ export function WBSTable() {
       updateTaskStatus(task.id, editVal as TaskStatus)
     } else if (editing.field === 'progress') {
       updateTaskProgress(task.id, Number(editVal))
-    } else if (editing.field === 'title' || editing.field === 'description' || editing.field === 'ownerId' || editing.field === 'priority' || editing.field === 'dueDate') {
+    } else if (editing.field === 'title' || editing.field === 'description' || editing.field === 'ownerId' || editing.field === 'makerId' || editing.field === 'checkerId' || editing.field === 'priority' || editing.field === 'dueDate') {
       const value = editing.field === 'title' ? editVal.trim() : editVal
       if (editing.field !== 'title' || value) updateTaskDetails(task.id, { [editing.field]: value } as Partial<Task>)
     }
@@ -144,7 +144,7 @@ export function WBSTable() {
       {/* Table */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
         <div style={{ background: '#FFFFFF', border: '1px solid #E5EAF2', borderRadius: 12, overflowX: 'auto' }}>
-          <table style={{ width: '100%', minWidth: 1330, borderCollapse: 'collapse', fontSize: 12 }}>
+          <table style={{ width: '100%', minWidth: 1510, borderCollapse: 'collapse', fontSize: 12 }}> 
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E5EAF2' }}>
                 <Th width={32} />
@@ -154,6 +154,8 @@ export function WBSTable() {
                 <Th label="Status" sortKey="status" current={sortKey} asc={sortAsc} onSort={toggleSort} width={130} />
                 <Th label="Priority" sortKey="priority" current={sortKey} asc={sortAsc} onSort={toggleSort} width={95} />
                 <Th label="Owner" sortKey="ownerId" current={sortKey} asc={sortAsc} onSort={toggleSort} width={80} />
+                <Th label="Maker" sortKey="makerId" current={sortKey} asc={sortAsc} onSort={toggleSort} width={105} />
+                <Th label="Checker" sortKey="checkerId" current={sortKey} asc={sortAsc} onSort={toggleSort} width={105} />
                 <Th label="Progress" sortKey="progress" current={sortKey} asc={sortAsc} onSort={toggleSort} width={140} />
                 <Th label="Planning" width={150} />
                 <Th label="Due Date" sortKey="dueDate" current={sortKey} asc={sortAsc} onSort={toggleSort} width={110} />
@@ -172,6 +174,8 @@ export function WBSTable() {
                 const isEditDescription = editing?.id === task.id && editing.field === 'description'
                 const isEditPriority = editing?.id === task.id && editing.field === 'priority'
                 const isEditOwner    = editing?.id === task.id && editing.field === 'ownerId'
+                const isEditMaker    = editing?.id === task.id && editing.field === 'makerId'
+                const isEditChecker  = editing?.id === task.id && editing.field === 'checkerId'
                 const isEditDueDate  = editing?.id === task.id && editing.field === 'dueDate'
                 const isEditPlanning = editing?.id === task.id && editing.field === 'planning'
 
@@ -257,6 +261,16 @@ export function WBSTable() {
                         {isEditOwner ? <input autoFocus value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => commitEdit(task)} onKeyDown={e => { if (e.key === 'Enter') commitEdit(task); if (e.key === 'Escape') setEditing(null) }} style={{ width:'100%', fontSize:11, border:'1px solid #C7D7FF', borderRadius:6, padding:'4px 5px', outline:'none' }} /> : <div onClick={() => startEdit(task.id, 'ownerId', task.ownerId)} title="Click to edit owner" style={{ display: 'flex', alignItems: 'center', gap: 6, cursor:'pointer' }}><div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#335CFF,#6D5CE7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#fff', flexShrink: 0 }}>{task.ownerId.slice(-2).toUpperCase()}</div><span style={{ fontSize: 11, color: '#667085' }}>{task.ownerId}</span></div>}
                       </td>
 
+                      {/* Maker */}
+                      <td style={{ padding:'10px 8px', width:105 }}>
+                        {isEditMaker ? <input autoFocus value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => commitEdit(task)} onKeyDown={e => { if (e.key === 'Enter') commitEdit(task); if (e.key === 'Escape') setEditing(null) }} placeholder="Resource ID" style={{ width:'100%', fontSize:11, border:'1px solid #C7D7FF', borderRadius:6, padding:'4px 5px', outline:'none' }} /> : <div onClick={() => startEdit(task.id, 'makerId', task.makerId ?? '')} title="Click to assign maker" style={{ cursor:'pointer', fontSize:11, color:task.makerId ? '#344054' : '#CBD5E1', minHeight:16 }}>{task.makerId || 'Assign maker'}</div>}
+                      </td>
+
+                      {/* Checker */}
+                      <td style={{ padding:'10px 8px', width:105 }}>
+                        {isEditChecker ? <input autoFocus value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => commitEdit(task)} onKeyDown={e => { if (e.key === 'Enter') commitEdit(task); if (e.key === 'Escape') setEditing(null) }} placeholder="Resource ID" style={{ width:'100%', fontSize:11, border:'1px solid #C7D7FF', borderRadius:6, padding:'4px 5px', outline:'none' }} /> : <div onClick={() => startEdit(task.id, 'checkerId', task.checkerId ?? '')} title="Click to assign checker" style={{ cursor:'pointer', fontSize:11, color:task.checkerId ? '#344054' : '#CBD5E1', minHeight:16 }}>{task.checkerId || 'Assign checker'}</div>}
+                      </td>
+
                       {/* Progress — click to edit */}
                       <td style={{ padding: '10px 8px', width: 140 }}>
                         {isEditProgress ? (
@@ -313,7 +327,7 @@ export function WBSTable() {
                     {/* Expanded detail row */}
                     {exp && (
                       <tr style={{ background: '#FAFBFD', borderBottom: '1px solid #F1F5F9' }}>
-                        <td colSpan={11} style={{ padding: '8px 48px 12px' }}>
+                        <td colSpan={13} style={{ padding: '8px 48px 12px' }}>
                           <div style={{ display: 'flex', gap: 20 }}>
                             {task.aiRiskAssessment && (
                               <div style={{

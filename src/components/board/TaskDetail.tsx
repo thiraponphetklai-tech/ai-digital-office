@@ -54,6 +54,10 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
     updateTaskDetails(task.id, { assigneeIds: nextAssigneeIds, ownerId: nextAssigneeIds[0] ?? task.ownerId })
   }
 
+  function updateWorkRole(role: 'makerId' | 'checkerId', resourceId: string) {
+    updateTaskDetails(task.id, { [role]: resourceId || undefined })
+  }
+
   function savePlanning() {
     const estimated = estimatedHours === '' ? undefined : Number(estimatedHours)
     const actual = actualHours === '' ? undefined : Number(actualHours)
@@ -202,14 +206,16 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
             <button type="button" onClick={savePlanning} style={{ marginTop:10, padding:'6px 11px', border:'1px solid #BFDBFE', borderRadius:7, cursor:'pointer', background:'#EFF6FF', color:'#2563EB', fontSize:11, fontWeight:700 }}>Save planning</button>
           </Section>
 
-          <Section title="Assigned players">
-            {availableResources.length ? <div style={{ display:'flex', flexDirection:'column', gap:7 }}>{availableResources.map(resource => <label key={resource.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', border:'1px solid #E5EAF2', borderRadius:8, cursor:'pointer', background:assigneeIds.includes(resource.id) ? '#EEF2FF' : '#FFFFFF' }}><input type="checkbox" checked={assigneeIds.includes(resource.id)} onChange={() => toggleAssignee(resource.id)} /><span style={{ flex:1, fontSize:12, color:'#344054', fontWeight:700 }}>{resource.name}</span><span style={{ fontSize:10, color:resource.type === 'VENDOR' ? '#7C3AED' : '#2563EB', fontWeight:800 }}>{resource.type === 'VENDOR' ? 'VENDOR' : 'EMPLOYEE'}</span><span style={{ fontSize:10, color:'#98A2B3' }}>{resource.role}</span></label>)}</div> : <p style={{ margin:0, color:'#98A2B3', fontSize:12 }}>เพิ่ม Player ใน Project Settings ก่อน</p>}
+          <Section title="WBS responsibilities">
+            {availableResources.length ? <><div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:9, marginBottom:12 }}><label style={planningLabel}>Maker<select value={task.makerId ?? ''} onChange={event => updateWorkRole('makerId', event.target.value)} style={planningInput}><option value="">Unassigned</option>{availableResources.map(resource => <option key={resource.id} value={resource.id}>{resource.name} · {resource.role}</option>)}</select></label><label style={planningLabel}>Checker<select value={task.checkerId ?? ''} onChange={event => updateWorkRole('checkerId', event.target.value)} style={planningInput}><option value="">Unassigned</option>{availableResources.map(resource => <option key={resource.id} value={resource.id}>{resource.name} · {resource.role}</option>)}</select></label></div><p style={{ margin:'0 0 12px', color:'#667085', fontSize:11, lineHeight:1.45 }}>Maker performs the work; Checker validates or accepts it. These roles are separate from task Owner.</p><div style={{ display:'flex', flexDirection:'column', gap:7 }}>{availableResources.map(resource => <label key={resource.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', border:'1px solid #E5EAF2', borderRadius:8, cursor:'pointer', background:assigneeIds.includes(resource.id) ? '#EEF2FF' : '#FFFFFF' }}><input type="checkbox" checked={assigneeIds.includes(resource.id)} onChange={() => toggleAssignee(resource.id)} /><span style={{ flex:1, fontSize:12, color:'#344054', fontWeight:700 }}>{resource.name}</span><span style={{ fontSize:10, color:resource.type === 'VENDOR' ? '#7C3AED' : '#2563EB', fontWeight:800 }}>{resource.type === 'VENDOR' ? 'VENDOR' : 'EMPLOYEE'}</span><span style={{ fontSize:10, color:'#98A2B3' }}>{resource.role}</span></label>)}</div></> : <p style={{ margin:0, color:'#98A2B3', fontSize:12 }}>Add project resources before assigning Maker or Checker.</p>}
           </Section>
 
           {/* Meta info */}
           <Section title="Details">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <MetaRow label="Owner" value={task.ownerId} />
+              <MetaRow label="Maker" value={availableResources.find(resource => resource.id === task.makerId)?.name ?? 'Unassigned'} />
+              <MetaRow label="Checker" value={availableResources.find(resource => resource.id === task.checkerId)?.name ?? 'Unassigned'} />
               <MetaRow label="Priority" value={task.priority} />
               <MetaRow label="Risk" value={task.riskLevel} />
               {task.dueDate && (

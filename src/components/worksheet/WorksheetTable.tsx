@@ -58,7 +58,7 @@ export function WorksheetTable() {
     addTask(task)
   }
 
-  function updateText(task: Task, field: 'title' | 'description' | 'ownerId' | 'teamId' | 'dueDate', value: string) {
+  function updateText(task: Task, field: 'title' | 'description' | 'ownerId' | 'makerId' | 'checkerId' | 'teamId' | 'dueDate', value: string) {
     updateTaskDetails(task.id, { [field]: value || undefined })
   }
 
@@ -90,9 +90,9 @@ export function WorksheetTable() {
         </div>
 
         <div style={{ background: '#FFFFFF', border: '1px solid #E5EAF2', borderRadius: 12, overflow: 'auto', boxShadow: '0 2px 8px rgba(16,24,40,.04)' }}>
-          <table style={{ borderCollapse: 'collapse', minWidth: 1380, width: '100%', fontSize: 12 }}>
+          <table style={{ borderCollapse: 'collapse', minWidth: 1580, width: '100%', fontSize: 12 }}> 
             <thead><tr style={{ background: '#F8FAFC' }}>
-              {['Task ID', 'Task name', 'คำอธิบาย', 'Owner', 'Team', 'Status', 'Priority', 'Progress', 'Due date', 'Blocker'].map(label => (
+              {['Task ID', 'Task name', 'คำอธิบาย', 'Owner', 'Maker', 'Checker', 'Team', 'Status', 'Priority', 'Progress', 'Due date', 'Blocker'].map(label => (
                 <th key={label} style={headerCellStyle}>{label}</th>
               ))}
             </tr></thead>
@@ -103,6 +103,8 @@ export function WorksheetTable() {
                   <td style={cellStyle}><input value={task.title} onChange={event => updateText(task, 'title', event.target.value)} style={cellInputStyle} /></td>
                   <td style={{ ...cellStyle, minWidth: 260, whiteSpace: 'normal' }}><input value={task.description ?? ''} onChange={event => updateText(task, 'description', event.target.value)} placeholder="รายละเอียดงาน" style={cellInputStyle} /></td>
                   <td style={cellStyle}><input value={task.ownerId} onChange={event => updateText(task, 'ownerId', event.target.value)} style={cellInputStyle} /></td>
+                  <td style={cellStyle}><input value={task.makerId ?? ''} onChange={event => updateText(task, 'makerId', event.target.value)} placeholder="Maker" style={cellInputStyle} /></td>
+                  <td style={cellStyle}><input value={task.checkerId ?? ''} onChange={event => updateText(task, 'checkerId', event.target.value)} placeholder="Checker" style={cellInputStyle} /></td>
                   <td style={cellStyle}><input value={task.teamId} onChange={event => updateText(task, 'teamId', event.target.value)} style={cellInputStyle} /></td>
                   <td style={cellStyle}><select value={task.status} onChange={event => updateTaskStatus(task.id, event.target.value as TaskStatus)} style={cellInputStyle}>{statuses.map(status => <option key={status}>{status}</option>)}</select></td>
                   <td style={cellStyle}><select value={task.priority} onChange={event => updateTaskDetails(task.id, { priority: event.target.value as TaskPriority })} style={cellInputStyle}>{priorities.map(priority => <option key={priority}>{priority}</option>)}</select></td>
@@ -111,7 +113,7 @@ export function WorksheetTable() {
                   <td style={cellStyle}><input value={task.blocker ?? ''} onChange={event => event.target.value ? setTaskBlocker(task.id, event.target.value) : undefined} placeholder="Add blocker" style={cellInputStyle} /></td>
                 </tr>
               ))}
-              {projectTasks.length === 0 && <tr><td colSpan={10} style={{ padding: 36, textAlign: 'center', color: '#98A2B3' }}>No tasks yet. Select “Add Row” to start tracking work.</td></tr>}
+              {projectTasks.length === 0 && <tr><td colSpan={12} style={{ padding: 36, textAlign: 'center', color: '#98A2B3' }}>No tasks yet. Select “Add Row” to start tracking work.</td></tr>}
             </tbody>
           </table>
         </div>

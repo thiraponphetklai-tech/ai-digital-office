@@ -27,6 +27,26 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         await transaction.projectHoliday.createMany({ data: body.calendar.holidays.map((holiday: { date: string; name: string }) => ({ calendarId: calendar.id, date: new Date(holiday.date), name: holiday.name })) })
       }
     }
+    if (Array.isArray(body.metrics)) {
+      const metrics = body.metrics
+        .filter((metric: { label?: unknown }) => typeof metric.label === 'string' && metric.label.trim())
+        .map((metric: { label: string; completed?: unknown; total?: unknown; unit?: unknown; detail?: unknown }) => ({
+          projectId,
+          label: metric.label.trim(),
+          completed: Math.max(0, Number(metric.completed) || 0),
+          total: Math.max(0, Number(metric.total) || 0),
+          unit: typeof metric.unit === 'string' && metric.unit.trim() ? metric.unit.trim() : null,
+          detail: typeof metric.detail === 'string' && metric.detail.trim() ? metric.detail.trim() : null,
+        }))
+      await transaction.projectMetric.deleteMany({ where: { projectId, label: { notIn: metrics.map((metric: { label: string }) => metric.label) } } })
+      for (const metric of metrics) {
+        await transaction.projectMetric.upsert({
+          where: { projectId_label: { projectId, label: metric.label } },
+          create: metric,
+          update: { completed: metric.completed, total: metric.total, unit: metric.unit, detail: metric.detail },
+        })
+      }
+    }
     if (Array.isArray(body.milestones)) {
       await transaction.milestone.deleteMany({ where: { projectId } })
       if (body.milestones.length) {

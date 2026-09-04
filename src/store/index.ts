@@ -46,7 +46,7 @@ interface TaskStore {
   updateTaskStatus:   (taskId: string, status: TaskStatus) => void
   updateTaskProgress: (taskId: string, progress: number) => void
   setTaskBlocker:     (taskId: string, blocker: string) => void
-  updateTaskDetails:  (taskId: string, updates: Partial<Pick<Task, 'title' | 'description' | 'ownerId' | 'assigneeIds' | 'teamId' | 'priority' | 'plannedStartDate' | 'plannedEndDate' | 'estimatedHours' | 'actualHours' | 'dueDate'>>) => void
+  updateTaskDetails:  (taskId: string, updates: Partial<Pick<Task, 'title' | 'description' | 'ownerId' | 'makerId' | 'checkerId' | 'assigneeIds' | 'teamId' | 'priority' | 'plannedStartDate' | 'plannedEndDate' | 'estimatedHours' | 'actualHours' | 'dueDate'>>) => void
   addTask:            (task: Task) => void
   setTasks:           (tasks: Task[]) => void
   getTask:            (taskId: string) => Task | undefined
