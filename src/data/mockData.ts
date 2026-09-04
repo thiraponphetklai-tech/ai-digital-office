@@ -88,10 +88,10 @@ export const MOCK_BITLOCKER_PROJECT: Project = {
   id: 'bitlocker-migration',
   name: 'BitLocker Migration',
   code: 'BLM-2026',
-  description: 'ย้ายการเข้ารหัสดิสก์ด้วย BitLocker: Branch 5,912 เครื่องดำเนินการครบ 100% และ HQ เหลือ 4 เครื่อง โดยนัดหมายดำเนินการแล้ว 1 เครื่องในวันที่ 25 ส.ค. 2026',
+  description: 'ย้ายการเข้ารหัสดิสก์ด้วย BitLocker: Branch ดำเนินการครบ และติดตามความคืบหน้า HQ ผ่าน WBS ของโครงการ',
   metrics: [
     { label: 'Branch', completed: 5912, total: 5912, detail: 'ดำเนินการครบ 100%' },
-    { label: 'HQ', completed: 3729, total: 3733, detail: 'เหลือ 4 เครื่อง: นัดหมายดำเนินการ 1 เครื่อง วันที่ 25 ส.ค. 2026, รอติดตามยืนยันอีก 3 เครื่อง' },
+    { label: 'HQ', completed: 3729, total: 3733 },
   ],
   calendar: {
     workingDays: [1, 2, 3, 4, 5, 6],
