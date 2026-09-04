@@ -21,24 +21,24 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   outline-offset: 2px;
 }
 
-/* Distinct application zones: navigation, workspace, and AI assistant. */
+/* Deliberately separate hues for the three application zones. */
 .app-topbar {
-  background: linear-gradient(100deg, #EEF2FF 0%, #F7F8FF 58%, #EEF6FF 100%) !important;
-  border-top: 3px solid #4F46E5 !important;
-  border-bottom: 1px solid #BFCDFD !important;
-  box-shadow: 0 2px 12px rgba(49, 46, 129, .10) !important;
+  background: linear-gradient(100deg, #FFF7ED 0%, #FFFBEB 58%, #FFF1E6 100%) !important;
+  border-top: 3px solid #EA580C !important;
+  border-bottom: 1px solid #FED7AA !important;
+  box-shadow: 0 2px 12px rgba(154, 52, 18, .12) !important;
 }
 
 .app-sidebar {
-  background: linear-gradient(180deg, #EFF6FF 0%, #F8FBFF 58%, #F1F5FF 100%) !important;
-  border-right: 1px solid #BFDBFE !important;
-  box-shadow: inset 3px 0 0 #60A5FA, 2px 0 10px rgba(30, 64, 175, .05) !important;
+  background: linear-gradient(180deg, #E0F2FE 0%, #F0F9FF 58%, #E8F4FF 100%) !important;
+  border-right: 1px solid #7DD3FC !important;
+  box-shadow: inset 3px 0 0 #0284C7, 2px 0 10px rgba(3, 105, 161, .08) !important;
 }
 
 .assistant-panel {
-  background: linear-gradient(180deg, #FAF5FF 0%, #FFFFFF 46%, #F5F3FF 100%) !important;
-  border-left: 1px solid #DDD6FE !important;
-  box-shadow: inset 3px 0 0 #A78BFA, -4px 0 16px rgba(109, 40, 217, .08) !important;
+  background: linear-gradient(180deg, #ECFDF5 0%, #F7FFFB 46%, #E8FAF1 100%) !important;
+  border-left: 1px solid #6EE7B7 !important;
+  box-shadow: inset 3px 0 0 #059669, -4px 0 16px rgba(5, 150, 105, .09) !important;
 }
 
 @media (max-width: 960px) {
