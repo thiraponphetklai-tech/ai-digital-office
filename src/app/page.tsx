@@ -32,14 +32,14 @@ const OfficeScene = dynamic(
 const T = {
   // App shell
   bg:        'var(--color-main-bg)',
-  surface:   '#FFFFFF',
-  surfaceAlt:'#F8FAFF',
-  border:    '#E0E7FF',
-  borderMid: '#C7D2FE',
+  surface:   'var(--color-main-surface)',
+  surfaceAlt:'var(--color-main-surface-alt)',
+  border:    'var(--color-main-border)',
+  borderMid: 'var(--color-main-border-strong)',
 
   // Brand
   indigo:    'var(--color-main-primary)',
-  indigoBg:  '#EEF2FF',
+  indigoBg:  'var(--color-main-primary-soft)',
   purple:    '#7C3AED',
   purpleBg:  '#F5F3FF',
   blue:      '#2563EB',

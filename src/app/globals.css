@@ -13,6 +13,11 @@
   --color-main-bg: #F7F7FB;
   --color-main-text: #1F2430;
   --color-main-primary: #4C3FE0;
+  --color-main-primary-soft: #EEECFF;
+  --color-main-surface: #FFFFFF;
+  --color-main-surface-alt: #F1F0F8;
+  --color-main-border: #E1E0EC;
+  --color-main-border-strong: #D2CFFF;
   --color-assistant-bg: #0F3D3E;
   --color-assistant-text: #EAF6F5;
   --color-assistant-accent: #2DD4BF;

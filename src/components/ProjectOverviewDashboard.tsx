@@ -50,15 +50,15 @@ export function ProjectOverviewDashboard() {
   ]
 
   return (
-    <main className="overview-dashboard" style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: 24, background: '#F4F7FB' }}> 
+    <main className="overview-dashboard" style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: 24, background: 'var(--color-main-bg)' }}>
       <section style={{ marginBottom: 20 }}>
         <div className="overview-hero" style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', gap: 16 }}> 
           <div>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', color: '#4F46E5' }}>PROJECT OVERVIEW</div>
-            <h1 style={{ margin: '5px 0 4px', fontSize: 26, color: '#172033' }}>{project?.name ?? 'Select a project'}</h1>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', color: 'var(--color-main-primary)' }}>PROJECT OVERVIEW</div>
+            <h1 style={{ margin: '5px 0 4px', fontSize: 26, color: 'var(--color-main-text)' }}>{project?.name ?? 'Select a project'}</h1>
             <p style={{ margin: 0, color: '#667085', fontSize: 13 }}>{project?.description ?? 'No project description available.'}</p>
           </div>
-          <div className="overview-progress-card" style={{ minWidth: 250, color: '#FFFFFF', background: 'linear-gradient(135deg,#4F46E5,#7C3AED)', borderRadius: 16, padding: '16px 18px', boxShadow: '0 8px 20px rgba(79,70,229,.24)' }}> 
+          <div className="overview-progress-card" style={{ minWidth: 250, color: '#FFFFFF', background: 'linear-gradient(135deg,var(--color-main-primary),#6A5BEE)', borderRadius: 16, padding: '16px 18px', boxShadow: '0 8px 20px rgba(76,63,224,.24)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', marginBottom: 10 }}><span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em' }}>WBS COMPLETION</span><strong style={{ fontSize: 36, lineHeight: .9 }}>{progress}%</strong></div>
             <div style={{ height: 9, background: 'rgba(255,255,255,.26)', borderRadius: 5, overflow: 'hidden' }}><div style={{ width: `${progress}%`, height: '100%', background: '#FFFFFF', borderRadius: 5 }} /></div>
             <div style={{ marginTop: 8, fontSize: 11, opacity: .9 }}>{done} / {projectTasks.length} WBS tasks completed</div>
@@ -67,12 +67,12 @@ export function ProjectOverviewDashboard() {
       </section>
 
       <section className="overview-kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 12 }}> 
-        {kpis.map(kpi => <div key={kpi.label} style={{ background: kpi.background, borderRadius: 12, padding: '15px 16px', border: '1px solid #E5EAF2' }}><div style={{ fontSize: 28, fontWeight: 800, color: kpi.color }}>{kpi.value}</div><div style={{ fontSize: 11, fontWeight: 650, color: kpi.color }}>{kpi.label}</div></div>)}
+        {kpis.map(kpi => <div key={kpi.label} style={{ background: kpi.background, borderRadius: 12, padding: '15px 16px', border: '1px solid var(--color-main-border)' }}><div style={{ fontSize: 28, fontWeight: 800, color: kpi.color }}>{kpi.value}</div><div style={{ fontSize: 11, fontWeight: 650, color: kpi.color }}>{kpi.label}</div></div>)}
       </section>
 
-      {project?.metrics?.length ? <section aria-label="Deployment KPIs" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 12 }}>{project.metrics.map(metric => { const metricProgress = Number(((metric.completed / metric.total) * 100).toFixed(2)); return <div key={metric.label} style={{ padding: '13px 16px', borderRadius: 12, background: '#FFFFFF', border: '1px solid #DDE5F5' }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12 }}><strong>{metric.label} <span style={{ color:'#98A2B3', fontSize:10, fontWeight:700 }}>DEPLOYMENT KPI</span></strong><strong style={{ color: '#047857' }}>{metricProgress}%</strong></div><div style={{ margin: '7px 0', color: '#475467', fontSize: 12 }}>{metric.completed.toLocaleString()} / {metric.total.toLocaleString()} {metric.unit ?? 'เครื่อง'}</div><div style={{ height: 6, background: '#EAF6EF', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${metricProgress}%`, height: '100%', background: '#10B981' }} /></div>{metric.detail && <div style={{ marginTop: 8, color: '#667085', fontSize: 11 }}>{metric.detail}</div>}</div> })}</section> : null}
+      {project?.metrics?.length ? <section aria-label="Deployment KPIs" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 12 }}>{project.metrics.map(metric => { const metricProgress = Number(((metric.completed / metric.total) * 100).toFixed(2)); return <div key={metric.label} style={{ padding: '13px 16px', borderRadius: 12, background: 'var(--color-main-surface)', border: '1px solid var(--color-main-border)' }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12 }}><strong>{metric.label} <span style={{ color:'#98A2B3', fontSize:10, fontWeight:700 }}>DEPLOYMENT KPI</span></strong><strong style={{ color: '#047857' }}>{metricProgress}%</strong></div><div style={{ margin: '7px 0', color: '#475467', fontSize: 12 }}>{metric.completed.toLocaleString()} / {metric.total.toLocaleString()} {metric.unit ?? 'เครื่อง'}</div><div style={{ height: 6, background: '#EAF6EF', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${metricProgress}%`, height: '100%', background: '#10B981' }} /></div>{metric.detail && <div style={{ marginTop: 8, color: '#667085', fontSize: 11 }}>{metric.detail}</div>}</div> })}</section> : null}
 
-      {timeline && <section style={{ marginBottom: 12, padding: '15px 16px', borderRadius: 12, background: '#FFFFFF', border: '1px solid #DDE5F5' }}>
+      {timeline && <section style={{ marginBottom: 12, padding: '15px 16px', borderRadius: 12, background: 'var(--color-main-surface)', border: '1px solid var(--color-main-border)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 12 }}><div><div style={{ fontSize: 10, fontWeight: 800, color: '#4F46E5', letterSpacing: '.08em' }}>PROJECT SCHEDULE</div><strong style={{ fontSize: 13, color: '#172033' }}>Working-day calendar</strong></div><span style={{ padding: '5px 8px', borderRadius: 6, background: scheduleVariance >= 0 ? '#ECFDF5' : '#FFFBEB', color: scheduleVariance >= 0 ? '#047857' : '#B45309', fontSize: 11, fontWeight: 800 }}>{scheduleVariance >= 0 ? `Ahead of schedule ${scheduleVariance}%` : `Behind schedule ${Math.abs(scheduleVariance)}%`}</span></div>
         <div className="overview-schedule-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}> 
           <div><div style={{ fontSize: 11, color: '#667085' }}>Elapsed</div><strong style={{ color: '#172033' }}>{timeline.elapsedWorkingDays} / {timeline.totalWorkingDays} วันทำการ</strong></div>
@@ -83,7 +83,7 @@ export function ProjectOverviewDashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}><div><div style={{ display: 'flex', justifyContent: 'space-between', color: '#667085', fontSize: 10, marginBottom: 4 }}><span>Schedule</span><span>{timeline.scheduleProgress}%</span></div><div style={{ height: 6, background: '#EEF2FF', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${timeline.scheduleProgress}%`, height: '100%', background: '#6366F1' }} /></div></div><div><div style={{ display: 'flex', justifyContent: 'space-between', color: '#667085', fontSize: 10, marginBottom: 4 }}><span>Work</span><span>{progress}%</span></div><div style={{ height: 6, background: '#EAF6EF', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${progress}%`, height: '100%', background: '#10B981' }} /></div></div></div>
       </section>}
 
-      <section style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 20, padding: '13px 16px', borderRadius: 12, background: '#FAF5FF', border: '1px solid #E9D5FF' }}>
+      <section style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 20, padding: '13px 16px', borderRadius: 12, background: 'var(--color-main-primary-soft)', border: '1px solid var(--color-main-border-strong)' }}>
         <span style={{ fontSize: 17 }}>🤖</span>
         <div><div style={{ fontSize: 10, color: '#6D28D9', fontWeight: 800, letterSpacing: '.08em', marginBottom: 4 }}>AI PROJECT SUMMARY</div><div style={{ fontSize: 12, color: '#5B21B6', lineHeight: 1.5 }}>{aiSummary}</div></div>
       </section>
@@ -103,5 +103,5 @@ export function ProjectOverviewDashboard() {
   )
 }
 
-const cardStyle = { background: '#FFFFFF', border: '1px solid #E0E7FF', borderRadius: 14, padding: 18, boxShadow: '0 2px 8px rgba(16,24,40,.04)' }
-const headingStyle = { margin: 0, fontSize: 13, color: '#172033' }
+const cardStyle = { background: 'var(--color-main-surface)', border: '1px solid var(--color-main-border)', borderRadius: 14, padding: 18, boxShadow: '0 2px 8px rgba(31,36,48,.04)' }
+const headingStyle = { margin: 0, fontSize: 13, color: 'var(--color-main-text)' }

@@ -17,14 +17,14 @@ export function ProjectTimeline() {
   const milestones = [...(project?.milestones ?? [])].sort((a, b) => a.date.localeCompare(b.date))
 
   return (
-    <main style={{ flex: 1, overflowY: 'auto', padding: 28, background: '#F4F7FB' }}>
+    <main style={{ flex: 1, overflowY: 'auto', padding: 28, background: 'var(--color-main-bg)' }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', color: '#4F46E5' }}>PROJECT TIMELINE</div>
           <h1 style={{ margin: '5px 0 4px', fontSize: 26, color: '#172033' }}>{project?.name ?? 'Select a project'}</h1>
           <p style={{ margin: 0, color: '#667085', fontSize: 13 }}>Milestones are managed from Project Settings and stored locally for this mock.</p>
         </div>
-        <section style={{ background: '#FFFFFF', border: '1px solid #E0E7FF', borderRadius: 16, padding: '8px 22px', boxShadow: '0 2px 8px rgba(16,24,40,.04)' }}>
+        <section style={{ background: 'var(--color-main-surface)', border: '1px solid var(--color-main-border)', borderRadius: 16, padding: '8px 22px', boxShadow: '0 2px 8px rgba(31,36,48,.04)' }}>
           {milestones.length ? milestones.map((milestone, index) => {
             const style = statusStyle[milestone.status]
             return <div key={milestone.id} style={{ display: 'grid', gridTemplateColumns: '105px 28px 1fr auto', gap: 12, alignItems: 'stretch', minHeight: 92 }}>
