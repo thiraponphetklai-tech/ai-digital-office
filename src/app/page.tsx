@@ -105,6 +105,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
   const [showLineUpdate, setShowLineUpdate] = React.useState(false)
   const [showProjectSettings, setShowProjectSettings] = React.useState(false)
   const [showResources, setShowResources] = React.useState(false)
+  const [showEventLog, setShowEventLog] = React.useState(false)
   const [showTools, setShowTools] = React.useState(false)
   const [showUsers, setShowUsers] = React.useState(false)
   const [currentUser, setCurrentUser] = React.useState<{ displayName: string; systemRole: string } | null>(null)
@@ -267,6 +268,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
         {showTools && activeProject && <div style={{ position:'absolute', top:34, left:0, zIndex:40, minWidth:185, padding:6, border:`1px solid ${T.border}`, borderRadius:10, background:'#FFFFFF', boxShadow:'0 12px 30px rgba(16,24,40,.14)' }}>
           <button onClick={() => { setShowTools(false); openProjectSettings() }} style={toolMenuButton}>Schedule & calendar</button>
           <button onClick={() => { setShowTools(false); setShowResources(true) }} style={toolMenuButton}>Resources & players</button>
+          <button onClick={() => { setShowTools(false); setShowEventLog(true) }} style={toolMenuButton}>Project event log</button>
           <button onClick={() => { setShowTools(false); openLineUpdate() }} style={{ ...toolMenuButton, color:'#047857' }}>Send LINE update</button>
           {currentUser?.systemRole === 'SYSTEM_ADMIN' && <button onClick={() => { setShowTools(false); setShowUsers(true) }} style={{ ...toolMenuButton, color:'#4338CA' }}>User management</button>}
         </div>}
@@ -304,6 +306,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
       </button>
     </header>
     {showResources && activeProject && <ProjectResourcesDialog projectId={activeProject.id} onClose={() => setShowResources(false)} />}
+    {showEventLog && activeProject && <ProjectEventLogDialog projectName={activeProject.name} onClose={() => setShowEventLog(false)} />}
     {showUsers && <UserManagementDialog onClose={() => setShowUsers(false)} />}
     {showProjectSettings && activeProject && (
       <div style={{ position:'fixed', inset:0, zIndex:50, background:'rgba(15,23,42,.38)', display:'grid', placeItems:'center', padding:20 }}>
@@ -538,21 +541,23 @@ function ProjectPulse() {
   )
 }
 
-// ── Event Stream ──────────────────────────────────────────────────
-function EventStream() {
+// ── Project event log ─────────────────────────────────────────────
+function ProjectEventLogDialog({ projectName, onClose }: { projectName: string; onClose: () => void }) {
   const { events } = useEventStore()
   const activeProjectId = usePrefsStore(s => s.prefs.activeProjectId)
   const projectEvents = events.filter(event => event.projectId === activeProjectId)
   return (
-    <div style={{ height:210, flexShrink:0, display:'flex',flexDirection:'column',overflow:'hidden',borderBottom:`1px solid ${T.border}`,background:T.surfaceAlt }}>
-      <div style={{ padding:'12px 16px 0',flexShrink:0 }}>
-        <SectionTitle color={T.sky} icon="⚡">Event Stream</SectionTitle>
-      </div>
-      <div style={{ flex:1,overflowY:'auto',padding:'0 10px 10px' }}>
+    <div style={{ position:'fixed', inset:0, zIndex:60, background:'rgba(15,23,42,.42)', display:'grid', placeItems:'center', padding:20 }}>
+      <section role="dialog" aria-modal="true" aria-labelledby="project-event-log-title" style={{ width:'min(680px, 100%)', maxHeight:'min(680px, calc(100vh - 40px))', display:'flex', flexDirection:'column', background:'var(--color-main-surface)', borderRadius:16, boxShadow:'0 24px 64px rgba(15,23,42,.28)', overflow:'hidden' }}>
+        <header style={{ display:'flex', justifyContent:'space-between', alignItems:'start', gap:16, padding:'18px 20px', borderBottom:`1px solid ${T.border}` }}>
+          <div><div style={{ fontSize:10, fontWeight:800, letterSpacing:'.1em', color:T.indigo }}>PROJECT EVENT LOG</div><h2 id="project-event-log-title" style={{ margin:'5px 0 3px', fontSize:18, color:T.text }}>{projectName}</h2><p style={{ margin:0, color:T.textSub, fontSize:12 }}>กิจกรรมล่าสุดของโครงการ</p></div>
+          <button type="button" onClick={onClose} aria-label="Close event log" style={{ width:30, height:30, border:`1px solid ${T.border}`, borderRadius:8, background:T.surface, cursor:'pointer', color:T.textSub, fontSize:20, lineHeight:1 }}>×</button>
+        </header>
+        <div style={{ flex:1, overflowY:'auto', padding:'12px 16px 18px' }}>
         {projectEvents.map((ev, i) => (
           <div key={ev.id} style={{
             display:'flex', alignItems:'flex-start', gap:10,
-            padding:'8px 10px', borderRadius:10, marginBottom:3, cursor:'pointer',
+            padding:'10px 12px', borderRadius:10, marginBottom:5,
             background: i===0 ? T.indigoBg : 'transparent',
             border: i===0 ? `1px solid ${T.borderMid}` : '1px solid transparent',
             transition:'all .1s',
@@ -571,12 +576,13 @@ function EventStream() {
           </div>
         ))}
         {projectEvents.length === 0 && (
-          <div style={{ padding:'28px 12px', textAlign:'center', color:T.textMuted, fontSize:11, lineHeight:1.5 }}>
+          <div style={{ padding:'48px 12px', textAlign:'center', color:T.textMuted, fontSize:12, lineHeight:1.5 }}>
             ยังไม่มีกิจกรรมในโครงการนี้<br />อัปเดต task หรือใช้ AI Agent เพื่อเริ่มบันทึก activity
           </div>
         )}
+        </div>
+      </section>
       </div>
-    </div>
   )
 }
 
@@ -661,8 +667,7 @@ export default function AIDigitalOffice() {
                   background:'var(--color-assistant-bg)', borderLeft:'1px solid var(--color-assistant-border)',
                   boxShadow:'-2px 0 12px rgba(6,42,42,.22)',
                 }}>
-                  <EventStream />
-                  <div style={{ flex:1, minHeight:0 }}><ChatPanel height="100%" /></div>
+                  <ChatPanel height="100%" />
                 </div>
               </>
             )}
