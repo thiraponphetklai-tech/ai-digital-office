@@ -2,8 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-topbar-bg: #4C3FE0;
+  --color-topbar-text: #FFFFFF;
+  --color-topbar-hover: #8B7CFF;
+  --color-sidebar-bg: #171923;
+  --color-sidebar-text: #C7C9D9;
+  --color-sidebar-active-text: #FFFFFF;
+  --color-sidebar-accent: #7C6FFF;
+  --color-main-bg: #F7F7FB;
+  --color-main-text: #1F2430;
+  --color-main-primary: #4C3FE0;
+  --color-assistant-bg: #0F3D3E;
+  --color-assistant-text: #EAF6F5;
+  --color-assistant-accent: #2DD4BF;
+  --color-assistant-accent-text: #073B3A;
+  --color-assistant-muted: #B9D8D5;
+  --color-assistant-surface: #155557;
+  --color-assistant-border: #286568;
+}
+
 body {
-  background: #F0F4FF;
+  background: var(--color-main-bg);
   margin: 0;
   overflow: hidden;
 }
@@ -21,24 +41,23 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   outline-offset: 2px;
 }
 
-/* Deliberately separate hues for the three application zones. */
 .app-topbar {
-  background: linear-gradient(100deg, #FFF7ED 0%, #FFFBEB 58%, #FFF1E6 100%) !important;
-  border-top: 3px solid #EA580C !important;
-  border-bottom: 1px solid #FED7AA !important;
-  box-shadow: 0 2px 12px rgba(154, 52, 18, .12) !important;
+  background: var(--color-topbar-bg) !important;
+  border-top: 3px solid var(--color-topbar-hover) !important;
+  border-bottom: 1px solid var(--color-topbar-hover) !important;
+  box-shadow: 0 2px 12px rgba(32, 24, 105, .24) !important;
 }
 
 .app-sidebar {
-  background: linear-gradient(180deg, #E0F2FE 0%, #F0F9FF 58%, #E8F4FF 100%) !important;
-  border-right: 1px solid #7DD3FC !important;
-  box-shadow: inset 3px 0 0 #0284C7, 2px 0 10px rgba(3, 105, 161, .08) !important;
+  background: var(--color-sidebar-bg) !important;
+  border-right: 1px solid #2B2E3D !important;
+  box-shadow: inset 3px 0 0 var(--color-sidebar-accent), 2px 0 10px rgba(15, 16, 25, .18) !important;
 }
 
 .assistant-panel {
-  background: linear-gradient(180deg, #ECFDF5 0%, #F7FFFB 46%, #E8FAF1 100%) !important;
-  border-left: 1px solid #6EE7B7 !important;
-  box-shadow: inset 3px 0 0 #059669, -4px 0 16px rgba(5, 150, 105, .09) !important;
+  background: var(--color-assistant-bg) !important;
+  border-left: 1px solid var(--color-assistant-border) !important;
+  box-shadow: inset 3px 0 0 var(--color-assistant-accent), -4px 0 16px rgba(6, 42, 42, .22) !important;
 }
 
 @media (max-width: 960px) {

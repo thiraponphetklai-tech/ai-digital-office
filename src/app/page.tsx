@@ -28,17 +28,17 @@ const OfficeScene = dynamic(
   )}
 )
 
-// ── Design tokens (light, colorful) ──────────────────────────────
+// ── Design tokens ────────────────────────────────────────────────
 const T = {
   // App shell
-  bg:        '#F0F4FF',
+  bg:        'var(--color-main-bg)',
   surface:   '#FFFFFF',
   surfaceAlt:'#F8FAFF',
   border:    '#E0E7FF',
   borderMid: '#C7D2FE',
 
   // Brand
-  indigo:    '#4F46E5',
+  indigo:    'var(--color-main-primary)',
   indigoBg:  '#EEF2FF',
   purple:    '#7C3AED',
   purpleBg:  '#F5F3FF',
@@ -59,7 +59,7 @@ const T = {
   skyBg:     '#F0F9FF',
 
   // Text
-  text:      '#111827',
+  text:      'var(--color-main-text)',
   textSub:   '#6B7280',
   textMuted: '#9CA3AF',
 }
@@ -223,7 +223,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
   return (
     <>
     <header className="app-topbar" style={{
-      background: T.surface, borderBottom: `1px solid ${T.border}`,
+      background: 'var(--color-topbar-bg)', borderBottom: '1px solid var(--color-topbar-hover)',
       display: 'flex', alignItems: 'center', padding: '9px 20px', gap: 12, flexShrink: 0,
       boxShadow: '0 1px 8px #4F46E510',
     }}>
@@ -231,39 +231,39 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
       <div style={{ display:'flex', alignItems:'center', gap: 9 }}>
         <div style={{
           width:34, height:34, borderRadius:10,
-          background:'linear-gradient(135deg,#4F46E5,#7C3AED)',
+          background:'var(--color-topbar-hover)',
           display:'flex', alignItems:'center', justifyContent:'center',
-          fontSize:13, fontWeight:800, color:'#fff',
+          fontSize:13, fontWeight:800, color:'var(--color-topbar-text)',
           boxShadow:'0 2px 8px #4F46E540',
         }}>AI</div>
         <div>
-          <div style={{ fontSize:14, fontWeight:700, color:T.text, lineHeight:1 }}>Digital Office</div>
-          <div style={{ fontSize:10, color:T.indigo, fontWeight:500 }}>AI Project Manager</div>
+          <div style={{ fontSize:14, fontWeight:700, color:'var(--color-topbar-text)', lineHeight:1 }}>Digital Office</div>
+          <div style={{ fontSize:10, color:'var(--color-topbar-hover)', fontWeight:500 }}>AI Project Manager</div>
         </div>
         <span style={{
-          fontSize:10, color:T.indigo, background:T.indigoBg,
-          border:`1px solid ${T.borderMid}`, borderRadius:6, padding:'1px 7px', fontWeight:600,
+          fontSize:10, color:'var(--color-topbar-text)', background:'rgba(255,255,255,.16)',
+          border:'1px solid rgba(255,255,255,.32)', borderRadius:6, padding:'1px 7px', fontWeight:600,
         }}>v2.0</span>
       </div>
 
       <button onClick={onOpenProjectHub} title="กลับไปเลือกโครงการ" style={{
-        display:'flex', alignItems:'center', gap:6, background:'transparent', border:`1px solid ${T.border}`,
-        borderRadius:8, padding:'6px 10px', color:T.indigo, cursor:'pointer', fontSize:11, fontWeight:700,
+        display:'flex', alignItems:'center', gap:6, background:'transparent', border:'1px solid rgba(255,255,255,.38)',
+        borderRadius:8, padding:'6px 10px', color:'var(--color-topbar-text)', cursor:'pointer', fontSize:11, fontWeight:700,
       }}>← All Projects</button>
 
       {/* Project pill */}
       <div style={{
         display:'flex', alignItems:'center', gap:8,
-        background:T.indigoBg, border:`1.5px solid ${T.borderMid}`,
+        background:'rgba(255,255,255,.14)', border:'1.5px solid rgba(255,255,255,.28)',
         borderRadius:20, padding:'6px 16px', cursor:'pointer',
       }}>
-        <span style={{ width:8, height:8, borderRadius:'50%', background:T.indigo }} />
-        <span style={{ fontSize:13, fontWeight:600, color:T.indigo }}>{activeProject?.name ?? 'Select a project'}</span>
-        <span style={{ color:T.textMuted, fontSize:10 }}>▾</span>
+        <span style={{ width:8, height:8, borderRadius:'50%', background:'var(--color-topbar-hover)' }} />
+        <span style={{ fontSize:13, fontWeight:600, color:'var(--color-topbar-text)' }}>{activeProject?.name ?? 'Select a project'}</span>
+        <span style={{ color:'var(--color-topbar-text)', fontSize:10 }}>▾</span>
       </div>
 
       <div style={{ position:'relative' }}>
-        <button onClick={() => setShowTools(current => !current)} disabled={!activeProject} style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', background:T.surface, color:T.indigo, cursor:activeProject ? 'pointer' : 'not-allowed', fontSize:11, fontWeight:700, opacity:activeProject ? 1 : .5 }}>Project tools ▾</button>
+        <button onClick={() => setShowTools(current => !current)} disabled={!activeProject} style={{ border:'1px solid rgba(255,255,255,.38)', borderRadius:8, padding:'6px 10px', background:'rgba(255,255,255,.1)', color:'var(--color-topbar-text)', cursor:activeProject ? 'pointer' : 'not-allowed', fontSize:11, fontWeight:700, opacity:activeProject ? 1 : .5 }}>Project tools ▾</button>
         {showTools && activeProject && <div style={{ position:'absolute', top:34, left:0, zIndex:40, minWidth:185, padding:6, border:`1px solid ${T.border}`, borderRadius:10, background:'#FFFFFF', boxShadow:'0 12px 30px rgba(16,24,40,.14)' }}>
           <button onClick={() => { setShowTools(false); openProjectSettings() }} style={toolMenuButton}>Schedule & calendar</button>
           <button onClick={() => { setShowTools(false); setShowResources(true) }} style={toolMenuButton}>Resources & players</button>
@@ -289,7 +289,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
       )}
 
       {/* AI status */}
-      {currentUser && <div className="account-actions" style={{ display:'flex', alignItems:'center', gap:6 }}><span style={{ maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color:T.textSub, fontSize:11, fontWeight:700 }} title={currentUser.displayName}>{currentUser.displayName}</span><button onClick={() => { void fetch('/api/auth/logout', { method:'POST' }).finally(() => window.location.reload()) }} style={{ border:'1px solid #E4E7EC', borderRadius:8, padding:'5px 9px', background:'#FFFFFF', color:'#667085', cursor:'pointer', fontSize:11, fontWeight:700 }}>Sign out</button></div>}
+      {currentUser && <div className="account-actions" style={{ display:'flex', alignItems:'center', gap:6 }}><span style={{ maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color:'var(--color-topbar-text)', fontSize:11, fontWeight:700 }} title={currentUser.displayName}>{currentUser.displayName}</span><button onClick={() => { void fetch('/api/auth/logout', { method:'POST' }).finally(() => window.location.reload()) }} style={{ border:'1px solid rgba(255,255,255,.38)', borderRadius:8, padding:'5px 9px', background:'rgba(255,255,255,.1)', color:'var(--color-topbar-text)', cursor:'pointer', fontSize:11, fontWeight:700 }}>Sign out</button></div>}
 
       <button onClick={() => toggleDnd(2)} style={{
         display:'flex', alignItems:'center', gap:6,
@@ -370,24 +370,24 @@ function Sidebar({ view, onViewChange }: { view: WorkspaceView; onViewChange: (v
   ]
   const NavItem = ({ item }: { item: SidebarItem }) => {
     const active = item.key === view
-    return <button key={item.label} title={collapsed ? `${item.label} — ${item.description}` : undefined} onClick={() => onViewChange(item.key)} style={{ width:'100%', minHeight:42, padding:collapsed ? '0 9px' : '7px 10px', borderRadius:9, background:active ? T.indigoBg : 'transparent', color:active ? T.indigo : T.textSub, border:`1px solid ${active ? T.borderMid : 'transparent'}`, cursor:'pointer', display:'flex', alignItems:'center', gap:10, textAlign:'left', transition:'background .15s, border-color .15s' }}>
+    return <button key={item.label} title={collapsed ? `${item.label} — ${item.description}` : undefined} onClick={() => onViewChange(item.key)} style={{ width:'100%', minHeight:42, padding:collapsed ? '0 9px' : '7px 10px', borderRadius:9, background:active ? 'rgba(124,111,255,.22)' : 'transparent', color:active ? 'var(--color-sidebar-active-text)' : 'var(--color-sidebar-text)', border:`1px solid ${active ? 'var(--color-sidebar-accent)' : 'transparent'}`, borderLeft:active ? '3px solid var(--color-sidebar-accent)' : '3px solid transparent', cursor:'pointer', display:'flex', alignItems:'center', gap:10, textAlign:'left', transition:'background .15s, border-color .15s' }}>
       <span style={{ width:22, textAlign:'center', fontSize:17, lineHeight:1, fontWeight:700, flexShrink:0 }}>{item.icon}</span>
-      {!collapsed && <span style={{ minWidth:0 }}><span style={{ display:'block', fontSize:12, fontWeight:active ? 800 : 700, lineHeight:1.1 }}>{item.label}</span><span style={{ display:'block', marginTop:3, color:active ? '#6366F1' : T.textMuted, fontSize:10, lineHeight:1.1 }}>{item.description}</span></span>}
+      {!collapsed && <span style={{ minWidth:0 }}><span style={{ display:'block', fontSize:12, fontWeight:active ? 800 : 700, lineHeight:1.1 }}>{item.label}</span><span style={{ display:'block', marginTop:3, color:active ? 'var(--color-topbar-hover)' : 'var(--color-sidebar-text)', fontSize:10, lineHeight:1.1 }}>{item.description}</span></span>}
     </button>
   }
   return (
-    <nav className={`app-sidebar ${collapsed ? 'is-collapsed' : ''}`} style={{ width:collapsed ? 62 : 204, background:T.surface, borderRight:`1px solid ${T.border}`, display:'flex', flexDirection:'column', padding:'12px 10px', gap:4, flexShrink:0, transition:'width .18s ease', overflow:'hidden' }}>
+    <nav className={`app-sidebar ${collapsed ? 'is-collapsed' : ''}`} style={{ width:collapsed ? 62 : 204, background:'var(--color-sidebar-bg)', borderRight:'1px solid #2B2E3D', display:'flex', flexDirection:'column', padding:'12px 10px', gap:4, flexShrink:0, transition:'width .18s ease', overflow:'hidden' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:collapsed ? 'center' : 'space-between', minHeight:28, margin:'0 2px 8px' }}>
-        {!collapsed && <span style={{ color:T.textMuted, fontSize:10, fontWeight:800, letterSpacing:'.1em' }}>WORKSPACE</span>}
-        <button type="button" onClick={() => setCollapsed(current => !current)} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'} title={collapsed ? 'Expand navigation' : 'Collapse navigation'} style={{ width:28, height:28, border:'1px solid '+T.border, borderRadius:7, background:'#FFFFFF', color:T.indigo, cursor:'pointer', fontSize:14, fontWeight:800 }}>{collapsed ? '›' : '‹'}</button>
+        {!collapsed && <span style={{ color:'var(--color-sidebar-text)', fontSize:10, fontWeight:800, letterSpacing:'.1em' }}>WORKSPACE</span>}
+        <button type="button" onClick={() => setCollapsed(current => !current)} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'} title={collapsed ? 'Expand navigation' : 'Collapse navigation'} style={{ width:28, height:28, border:'1px solid #3B3F52', borderRadius:7, background:'transparent', color:'var(--color-sidebar-active-text)', cursor:'pointer', fontSize:14, fontWeight:800 }}>{collapsed ? '›' : '‹'}</button>
       </div>
       {workspaceItems.map(item => <NavItem key={item.key} item={item} />)}
-      <div style={{ height:1, background:T.border, margin:'10px 2px 8px' }} />
-      {!collapsed && <span style={{ margin:'0 2px 5px', color:T.textMuted, fontSize:10, fontWeight:800, letterSpacing:'.1em' }}>PLAN & CAPACITY</span>}
+      <div style={{ height:1, background:'#323545', margin:'10px 2px 8px' }} />
+      {!collapsed && <span style={{ margin:'0 2px 5px', color:'var(--color-sidebar-text)', fontSize:10, fontWeight:800, letterSpacing:'.1em' }}>PLAN & CAPACITY</span>}
       {planningItems.map(item => <NavItem key={item.key} item={item} />)}
-      <a href="/worksheet" title={collapsed ? 'Work sheet — tabular task editing' : undefined} style={{ width:'100%', minHeight:42, padding:collapsed ? '0 9px' : '7px 10px', borderRadius:9, color:T.textSub, textDecoration:'none', display:'flex', alignItems:'center', gap:10 }}><span style={{ width:22, textAlign:'center', fontSize:17, fontWeight:700 }}>⌑</span>{!collapsed && <span><span style={{ display:'block', fontSize:12, fontWeight:700, lineHeight:1.1 }}>Work sheet</span><span style={{ display:'block', marginTop:3, color:T.textMuted, fontSize:10, lineHeight:1.1 }}>Tabular task editing</span></span>}</a>
+      <a href="/worksheet" title={collapsed ? 'Work sheet — tabular task editing' : undefined} style={{ width:'100%', minHeight:42, padding:collapsed ? '0 9px' : '7px 10px', borderRadius:9, color:'var(--color-sidebar-text)', textDecoration:'none', display:'flex', alignItems:'center', gap:10 }}><span style={{ width:22, textAlign:'center', fontSize:17, fontWeight:700 }}>⌑</span>{!collapsed && <span><span style={{ display:'block', fontSize:12, fontWeight:700, lineHeight:1.1 }}>Work sheet</span><span style={{ display:'block', marginTop:3, color:'var(--color-sidebar-text)', fontSize:10, lineHeight:1.1 }}>Tabular task editing</span></span>}</a>
       <div style={{ flex:1 }} />
-      {!collapsed && <div style={{ margin:'8px 2px 2px', padding:'9px 10px', borderRadius:10, background:T.surfaceAlt, border:`1px solid ${T.border}` }}><div style={{ color:T.indigo, fontSize:10, fontWeight:800 }}>TIP</div><div style={{ marginTop:3, color:T.textSub, fontSize:10, lineHeight:1.35 }}>Use the Task board for daily updates and Gantt plan for schedule review.</div></div>}
+      {!collapsed && <div style={{ margin:'8px 2px 2px', padding:'9px 10px', borderRadius:10, background:'rgba(255,255,255,.06)', border:'1px solid #323545' }}><div style={{ color:'var(--color-sidebar-accent)', fontSize:10, fontWeight:800 }}>TIP</div><div style={{ marginTop:3, color:'var(--color-sidebar-text)', fontSize:10, lineHeight:1.35 }}>Use the Task board for daily updates and Gantt plan for schedule review.</div></div>}
     </nav>
   )
 }
@@ -474,7 +474,7 @@ function Panel3D() {
       </div>
 
       {/* 3D Scene */}
-      <div style={{ flex:1, position:'relative', overflow:'hidden', background:'#F0F4FF', minHeight:0 }}>
+      <div style={{ flex:1, position:'relative', overflow:'hidden', background:'var(--color-main-bg)', minHeight:0 }}>
         <OfficeScene />
 
         {/* Legend overlay */}
@@ -658,8 +658,8 @@ export default function AIDigitalOffice() {
                 <ProjectOverviewDashboard />
                 <div className="assistant-panel" style={{
                   width:'clamp(320px, 28vw, 380px)', flexShrink:0, display:'flex', flexDirection:'column', overflow:'hidden',
-                  background:T.surface, borderLeft:`1px solid ${T.border}`,
-                  boxShadow:'-2px 0 12px #4F46E510',
+                  background:'var(--color-assistant-bg)', borderLeft:'1px solid var(--color-assistant-border)',
+                  boxShadow:'-2px 0 12px rgba(6,42,42,.22)',
                 }}>
                   <EventStream />
                   <div style={{ flex:1, minHeight:0 }}><ChatPanel height="100%" /></div>

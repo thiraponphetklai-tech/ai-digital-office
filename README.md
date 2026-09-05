@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Digital Office
 
-## Getting Started
+AI Digital Office is a multi-project management application for planning,
+delivery tracking, resource workload, LINE project updates, and advisory AI
+chat. It runs on Next.js and is deployed to Azure Container Apps with Azure
+Database for PostgreSQL.
 
-First, run the development server:
+The repository operating rules are in [AGENTS.md](AGENTS.md). They take
+precedence over other project documentation.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Architecture
+
+- Next.js 16 / React 19 / TypeScript
+- Prisma with PostgreSQL as the server-side source of truth
+- Azure Container Apps production image from `Dockerfile`
+- Azure AI Foundry chat using managed identity
+- LINE Messaging API for outbound reports
+- Zustand for client UI state; it is not the authoritative persisted database
+
+## Local setup
+
+Install dependencies and provide a local `.env` file with the required values:
+
+```dotenv
+DATABASE_URL=
+LINE_CHANNEL_ACCESS_TOKEN=
+LINE_DAILY_SUMMARY_RECIPIENT_ID=
+CRON_SECRET=
+FOUNDRY_OPENAI_ENDPOINT=
+FOUNDRY_MODEL_DEPLOYMENT=
+AZURE_CLIENT_ID=
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`FOUNDRY_*` and `AZURE_CLIENT_ID` are required only when testing the AI chat.
+Use a credential supported by `DefaultAzureCredential`; production uses managed
+identity. Never commit `.env` files.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```powershell
+npm ci
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open `http://localhost:3000`. The seeded local account must be changed from its
+temporary password on first sign-in.
 
-## Learn More
+## Commands
 
-To learn more about Next.js, take a look at the following resources:
+```powershell
+npm run dev
+npm run build
+npm run start
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+There is currently no automated test command. Run `npm run build` before
+submitting changes.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment and operations
 
-## Deploy on Vercel
+The runtime is a non-root Node.js 22 container built from `Dockerfile`.
+Apply Prisma migrations through the approved Azure migration workflow before
+deploying an application version that requires them. See
+[docs/azure-postgresql.md](docs/azure-postgresql.md) for database operations.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`POST /api/line/analyze-project` and `POST /api/line/test-message` require an
+`Authorization: Bearer <CRON_SECRET>` header. Scheduling those calls is an
+Azure/platform operation, not a process implemented in this repository.

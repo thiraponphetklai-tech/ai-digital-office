@@ -1,35 +1,49 @@
-# Azure PostgreSQL setup
+# Azure PostgreSQL operations
 
-## Required application settings
+The application is deployed on Azure and uses PostgreSQL through Prisma.
+`DATABASE_URL` is a deployment secret; do not commit it or paste production
+values into tickets, logs, or documentation.
 
-Configure these values in Azure App Service / Container Apps. Do not commit them to Git.
+## Required runtime settings
 
-| Name | Value |
+Configure these as Azure Container Apps secrets or Key Vault-backed settings.
+
+| Name | Purpose |
 | --- | --- |
-| `DATABASE_URL` | `postgresql://APP_USER:APP_PASSWORD@SERVER_NAME.postgres.database.azure.com:5432/ai_digital_office?sslmode=require` |
-| `LINE_CHANNEL_ACCESS_TOKEN` | LINE channel access token |
-| `LINE_DAILY_SUMMARY_RECIPIENT_ID` | LINE target group or user ID |
-| `CRON_SECRET` | Long random value for protected scheduled endpoints |
+| `DATABASE_URL` | TLS PostgreSQL connection string for the application account. |
+| `LINE_CHANNEL_ACCESS_TOKEN` | LINE Messaging API bearer token. |
+| `LINE_DAILY_SUMMARY_RECIPIENT_ID` | LINE group or user recipient. |
+| `CRON_SECRET` | Secret for protected report endpoints. |
+| `FOUNDRY_OPENAI_ENDPOINT` | Azure AI Foundry OpenAI endpoint. |
+| `FOUNDRY_MODEL_DEPLOYMENT` | AI Foundry model deployment name. |
+| `AZURE_CLIENT_ID` | Optional user-assigned managed identity client ID. |
 
-## Provision database
+The workload identity needs access to the configured Foundry resource. The
+database connection must require TLS. Prefer private networking; if public
+access is necessary, allow only the approved application egress addresses.
 
-1. Create **Azure Database for PostgreSQL Flexible Server** in the required Azure region.
-2. Create database `ai_digital_office` and a least-privilege application user.
-3. Configure networking: private access is preferred. For a public proof of concept, allow only the App Service outbound addresses and require TLS.
-4. Set `DATABASE_URL` in the application settings / Key Vault reference.
+## Schema deployment
 
-## Apply schema and seed initial production data
-
-Run these from an approved deployment runner with `DATABASE_URL` set:
+Apply a reviewed migration before deploying an image that depends on it:
 
 ```powershell
-npx prisma generate
-npx prisma migrate deploy
-npx tsx prisma/seed.ts
+npm run db:generate
+npm run db:migrate
 ```
 
-The seed imports the current projects, tasks, KPI metrics, milestones, and six players into PostgreSQL. It is for initial data migration; subsequent production updates must use the database APIs.
+Run `npm run db:seed` only when initializing an approved environment. It is not
+a routine production deployment command because it may alter seeded records.
 
-## Corporate TLS note
+The repository Dockerfile contains a dedicated `migrator` stage for the
+one-off Azure Container Apps migration workflow; the web runtime image stays
+minimal and does not carry the Prisma CLI.
 
-If `npx prisma generate` fails while downloading Prisma engines with `unable to get local issuer certificate`, install/configure the organization root CA for Node.js on the approved build runner. Do not disable TLS validation. Azure deployment runners should have normal trusted certificate chains.
+## Recovery and TLS
+
+`prisma/recover-task-state.ts` requires both `DATABASE_URL` and
+`RECOVERY_DATABASE_URL`. Treat it as an approved recovery operation, not a
+normal deployment step.
+
+If Prisma engine installation fails with `unable to get local issuer
+certificate`, configure the organization root CA on the approved build or
+migration runner. Do not disable TLS certificate validation.

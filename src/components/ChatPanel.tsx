@@ -12,8 +12,8 @@ interface ConfirmDialog {
 function FlexCard({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      background: '#F7F8FC',
-      border: '1px solid #E1E6F0',
+      background: 'var(--color-assistant-surface)',
+      border: '1px solid var(--color-assistant-border)',
       borderRadius: 12,
       padding: '11px 12px',
       marginTop: 3,
@@ -31,11 +31,11 @@ function AIReviewCard({ text, onConfirm }: { text: string; onConfirm: (action: s
 
   return (
     <FlexCard>
-      <div style={{ fontSize:10, fontWeight:800, color:'#335CFF', letterSpacing:'.08em', marginBottom:8 }}>
+      <div style={{ fontSize:10, fontWeight:800, color:'var(--color-assistant-accent)', letterSpacing:'.08em', marginBottom:8 }}>
         🤖 AI REVIEW RESULT
       </div>
       {lines.map((line, i) => (
-        <div key={i} style={{ fontSize:12, color:'#344054', lineHeight:1.55, marginBottom:3 }}>
+        <div key={i} style={{ fontSize:12, color:'var(--color-assistant-text)', lineHeight:1.55, marginBottom:3 }}>
           {line}
         </div>
       ))}
@@ -45,8 +45,8 @@ function AIReviewCard({ text, onConfirm }: { text: string; onConfirm: (action: s
             onClick={() => onConfirm('follow-up-uat')}
             style={{
               fontSize:11, padding:'6px 10px', borderRadius:8, cursor:'pointer',
-              background:'linear-gradient(135deg,#335CFF,#6D5CE7)',
-              border:'none', color:'#fff', fontWeight:600,
+              background:'var(--color-assistant-accent)',
+              border:'none', color:'var(--color-assistant-accent-text)', fontWeight:600,
               boxShadow:'0 5px 12px rgba(51,92,255,.20)',
             }}>
             Follow-up UAT ✓
@@ -55,8 +55,8 @@ function AIReviewCard({ text, onConfirm }: { text: string; onConfirm: (action: s
             onClick={() => onConfirm('view-detail')}
             style={{
               fontSize:11, padding:'6px 10px', borderRadius:8, cursor:'pointer',
-              background:'#F7F8FC', border:'1px solid #D8DEE9',
-              color:'#344054', fontWeight:650,
+              background:'transparent', border:'1px solid var(--color-assistant-border)',
+              color:'var(--color-assistant-text)', fontWeight:650,
             }}>
             ดูรายละเอียด
           </button>
@@ -76,15 +76,15 @@ function RiskAlertCard({ task, blocker, onFollowUp }: {
         <span style={{ fontSize:16 }}>⚠️</span>
         <div>
           <div style={{ fontSize:10, fontWeight:800, color:'#DC2626', letterSpacing:'.06em' }}>RISK DETECTED</div>
-          <div style={{ fontSize:12, fontWeight:650, color:'#172033' }}>{task}</div>
+          <div style={{ fontSize:12, fontWeight:650, color:'var(--color-assistant-text)' }}>{task}</div>
         </div>
       </div>
-      <div style={{ fontSize:11, color:'#667085', marginBottom:10, lineHeight:1.5 }}>
+      <div style={{ fontSize:11, color:'var(--color-assistant-muted)', marginBottom:10, lineHeight:1.5 }}>
         Blocker: <span style={{ color:'#DC2626', fontWeight:600 }}>{blocker}</span>
       </div>
       <button onClick={onFollowUp} style={{
         fontSize:11, padding:'6px 10px', borderRadius:8, cursor:'pointer',
-        background:'#FFF5F5', border:'1px solid #FECACA',
+        background:'transparent', border:'1px solid #F87171',
         color:'#DC2626', fontWeight:600,
       }}>
         🔔 Follow-up owner
@@ -100,26 +100,26 @@ function ConfirmDialogBox({ dialog, onClose }: {
   return (
     <div style={{
       position:'absolute', bottom:78, left:12, right:12, zIndex:50,
-      background:'#fff', border:'1px solid #D8DEE9',
+      background:'var(--color-assistant-surface)', border:'1px solid var(--color-assistant-border)',
       borderRadius:14, padding:'13px 14px',
-      boxShadow:'0 16px 40px rgba(16,24,40,.14)',
+      boxShadow:'0 16px 40px rgba(6,42,42,.32)',
     }}>
-      <div style={{ fontSize:12, color:'#344054', marginBottom:12, lineHeight:1.55 }}>
+      <div style={{ fontSize:12, color:'var(--color-assistant-text)', marginBottom:12, lineHeight:1.55 }}>
         {dialog.message}
       </div>
       <div style={{ display:'flex', gap:8 }}>
         <button onClick={() => { dialog.onConfirm(); onClose() }} style={{
           flex:1, fontSize:12, padding:'8px 0', borderRadius:9, cursor:'pointer',
-          background:'linear-gradient(135deg,#335CFF,#6D5CE7)',
-          border:'none', color:'#fff', fontWeight:600,
+          background:'var(--color-assistant-accent)',
+          border:'none', color:'var(--color-assistant-accent-text)', fontWeight:600,
           boxShadow:'0 5px 12px rgba(51,92,255,.18)',
         }}>
           ยืนยัน ✓
         </button>
         <button onClick={onClose} style={{
           flex:1, fontSize:12, padding:'8px 0', borderRadius:9, cursor:'pointer',
-          background:'#F8FAFC', border:'1px solid #E4E7EC',
-          color:'#667085', fontWeight:600,
+          background:'transparent', border:'1px solid var(--color-assistant-border)',
+          color:'var(--color-assistant-text)', fontWeight:600,
         }}>
           ยกเลิก
         </button>
@@ -139,9 +139,9 @@ function DNDBar({ onClose }: { onClose: () => void }) {
   return (
     <div style={{
       position:'absolute', bottom:78, left:12, right:12, zIndex:50,
-      background:'#fff', border:'1px solid #FDE68A',
+      background:'var(--color-assistant-surface)', border:'1px solid var(--color-assistant-accent)',
       borderRadius:14, padding:'12px 13px',
-      boxShadow:'0 16px 40px rgba(16,24,40,.14)',
+      boxShadow:'0 16px 40px rgba(6,42,42,.32)',
     }}>
       <div style={{ fontSize:11, fontWeight:700, color:'#D97706', marginBottom:10 }}>
         🔕 เลือกระยะเวลา DND
@@ -150,15 +150,15 @@ function DNDBar({ onClose }: { onClose: () => void }) {
         {opts.map(o => (
           <button key={o.label} onClick={() => { toggleDnd(o.hours); onClose() }} style={{
             fontSize:11, padding:'6px 10px', borderRadius:8, cursor:'pointer',
-            background:'#FFFBEB', border:'1px solid #FDE68A',
-            color:'#D97706', fontWeight:600,
+            background:'transparent', border:'1px solid var(--color-assistant-accent)',
+            color:'var(--color-assistant-text)', fontWeight:600,
           }}>
             {o.label}
           </button>
         ))}
         <button onClick={onClose} style={{
           fontSize:11, padding:'6px 10px', borderRadius:8, cursor:'pointer',
-          background:'#F8FAFC', border:'1px solid #E4E7EC', color:'#9CA3AF',
+          background:'transparent', border:'1px solid var(--color-assistant-border)', color:'var(--color-assistant-muted)',
         }}>
           ยกเลิก
         </button>
@@ -219,19 +219,19 @@ export function ChatPanel({ height = 340 }: { height?: number | string }) {
 
   return (
     <div style={{ height, flexShrink:0, display:'flex', flexDirection:'column',
-      background:'#fff', position:'relative' }}>
+      background:'var(--color-assistant-bg)', color:'var(--color-assistant-text)', position:'relative' }}>
 
       {/* Header */}
-      <div style={{ padding:'9px 14px 8px', borderBottom:'1px solid #E5EAF2',
+      <div style={{ padding:'9px 14px 8px', borderBottom:'1px solid var(--color-assistant-border)',
         flexShrink:0, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div><div style={{ fontSize:12, fontWeight:800, color:'#344054' }}>AI Project Assistant</div><div style={{ marginTop:2, fontSize:10, color:'#667085' }}>Ask about progress, risk, or next actions</div></div>
+        <div><div style={{ fontSize:12, fontWeight:800, color:'var(--color-assistant-text)' }}>AI Project Assistant</div><div style={{ marginTop:2, fontSize:10, color:'var(--color-assistant-muted)' }}>Ask about progress, risk, or next actions</div></div>
         <div style={{ display:'flex', gap:6 }}>
-          <button onClick={() => clearConversation(activeProjectId)} title="Start a new conversation for this project" style={{ fontSize:10, padding:'5px 8px', borderRadius:8, cursor:'pointer', background:'#F8FAFC', border:'1px solid #E4E7EC', color:'#667085', fontWeight:600 }}>New chat</button>
-          {prefs.dndMode ? <button onClick={() => toggleDnd()} style={{ fontSize:10, padding:'5px 8px', borderRadius:8, cursor:'pointer', background:'#FFFBEB', border:'1px solid #FDE68A', color:'#B54708', fontWeight:650 }}>Notifications off</button> : <button onClick={() => setShowDnd(true)} style={{ fontSize:10, padding:'5px 8px', borderRadius:8, cursor:'pointer', background:'#F8FAFC', border:'1px solid #E4E7EC', color:'#667085', fontWeight:600 }}>DND</button>}
+          <button onClick={() => clearConversation(activeProjectId)} title="Start a new conversation for this project" style={{ fontSize:10, padding:'5px 8px', borderRadius:8, cursor:'pointer', background:'transparent', border:'1px solid var(--color-assistant-border)', color:'var(--color-assistant-text)', fontWeight:600 }}>New chat</button>
+          {prefs.dndMode ? <button onClick={() => toggleDnd()} style={{ fontSize:10, padding:'5px 8px', borderRadius:8, cursor:'pointer', background:'transparent', border:'1px solid #FDE68A', color:'#FDE68A', fontWeight:650 }}>Notifications off</button> : <button onClick={() => setShowDnd(true)} style={{ fontSize:10, padding:'5px 8px', borderRadius:8, cursor:'pointer', background:'transparent', border:'1px solid var(--color-assistant-border)', color:'var(--color-assistant-text)', fontWeight:600 }}>DND</button>}
         </div>
       </div>
 
-        <div style={{ display:'flex', gap:6, padding:'7px 12px', overflowX:'auto', borderBottom:'1px solid #E9D5FF', background:'#FAF5FF', flexShrink:0 }}>
+        <div style={{ display:'flex', gap:6, padding:'7px 12px', overflowX:'auto', borderBottom:'1px solid var(--color-assistant-border)', background:'var(--color-assistant-surface)', flexShrink:0 }}>
           {[
             ['📅 นัดหมายหัวหน้า', 'นัดหมายหัวหน้าเพื่ออัปเดตโครงการ'],
             ['＋ สร้าง Task', 'สร้าง task: '],
@@ -240,21 +240,21 @@ export function ChatPanel({ height = 340 }: { height?: number | string }) {
           ].map(([label, prompt]) => (
             <button key={label} onClick={() => setInput(prompt)} style={{
               whiteSpace:'nowrap', fontSize:10, padding:'5px 8px', borderRadius:8, cursor:'pointer',
-              background:'#FFFFFF', border:'1px solid #DDD6FE', color:'#6D28D9', fontWeight:650,
+              background:'transparent', border:'1px solid var(--color-assistant-accent)', color:'var(--color-assistant-text)', fontWeight:650,
             }}>{label}</button>
           ))}
         </div>
 
       {/* Messages */}
       <div ref={bodyRef} style={{ flex:1, overflowY:'auto', padding:'10px 12px',
-        display:'flex', flexDirection:'column', gap:9, background:'#FCFCFD' }}>
+        display:'flex', flexDirection:'column', gap:9, background:'var(--color-assistant-bg)' }}>
         {messages.map(msg => (
           <div key={msg.id} style={{
             alignSelf: msg.role === 'me' ? 'flex-end' : 'flex-start',
             maxWidth: '86%',
           }}>
             {msg.role === 'ai' && (
-              <div style={{ fontSize:9,color:'#667085',marginBottom:4,
+              <div style={{ fontSize:9,color:'var(--color-assistant-muted)',marginBottom:4,
                 marginLeft:3,fontWeight:800,letterSpacing:'.06em' }}>AI AGENT</div>
             )}
 
@@ -269,9 +269,9 @@ export function ChatPanel({ height = 340 }: { height?: number | string }) {
                 padding:'9px 12px', fontSize:12, lineHeight:1.55,
                 borderRadius: msg.role === 'me' ? '12px 4px 12px 12px' : '4px 12px 12px 12px',
                 ...(msg.role === 'me'
-                  ? { background:'linear-gradient(135deg,#335CFF,#5B68E8)', color:'#fff',
+                  ? { background:'var(--color-assistant-accent)', color:'var(--color-assistant-accent-text)',
                       boxShadow:'0 5px 14px rgba(51,92,255,.18)' }
-                  : { background:'#FFFFFF', border:'1px solid #E1E6F0', color:'#344054', boxShadow:'0 1px 2px rgba(16,24,40,.03)' }),
+                  : { background:'var(--color-assistant-surface)', border:'1px solid var(--color-assistant-border)', color:'var(--color-assistant-text)', boxShadow:'0 1px 2px rgba(6,42,42,.18)' }),
               }}>
                 {msg.text.split('\n').map((l, i, arr) => (
                   <React.Fragment key={i}>
@@ -287,8 +287,8 @@ export function ChatPanel({ height = 340 }: { height?: number | string }) {
                 {msg.quickReplies.map(qr => (
                   <button key={qr} onClick={() => handleQuickReply(qr)} style={{
                     fontSize:11, padding:'5px 10px', borderRadius:8, cursor:'pointer',
-                    background:'#F7F8FC', border:'1px solid #D8DEE9',
-                    color:'#344054', fontWeight:650, transition:'all .1s',
+                    background:'transparent', border:'1px solid var(--color-assistant-border)',
+                    color:'var(--color-assistant-text)', fontWeight:650, transition:'all .1s',
                   }}>{qr}</button>
                 ))}
               </div>
@@ -298,10 +298,10 @@ export function ChatPanel({ height = 340 }: { height?: number | string }) {
 
         {isTyping && (
           <div style={{ alignSelf:'flex-start' }}>
-            <div style={{ fontSize:9,color:'#667085',marginBottom:4,fontWeight:800,letterSpacing:'.06em' }}>AI AGENT</div>
-            <div style={{ padding:'9px 12px', background:'#FFFFFF',
-              border:'1px solid #E1E6F0', borderRadius:'4px 12px 12px 12px',
-              color:'#98A2B3', fontSize:12, boxShadow:'0 1px 2px rgba(16,24,40,.03)' }}>
+            <div style={{ fontSize:9,color:'var(--color-assistant-muted)',marginBottom:4,fontWeight:800,letterSpacing:'.06em' }}>AI AGENT</div>
+            <div style={{ padding:'9px 12px', background:'var(--color-assistant-surface)',
+              border:'1px solid var(--color-assistant-border)', borderRadius:'4px 12px 12px 12px',
+              color:'var(--color-assistant-muted)', fontSize:12, boxShadow:'0 1px 2px rgba(6,42,42,.18)' }}>
               กำลังพิมพ์...
             </div>
           </div>
@@ -310,22 +310,22 @@ export function ChatPanel({ height = 340 }: { height?: number | string }) {
 
       {/* Input */}
       <div style={{ display:'flex', gap:8, padding:'8px 12px',
-        borderTop:'1px solid #E5EAF2', flexShrink:0, background:'#FFFFFF' }}>
+        borderTop:'1px solid var(--color-assistant-border)', flexShrink:0, background:'var(--color-assistant-bg)' }}>
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && send()}
           placeholder="พิมพ์คำสั่ง หรือถาม AI..."
           style={{
-            flex:1, background:'#F8FAFC', border:'1px solid #D8DEE9',
+            flex:1, background:'var(--color-assistant-surface)', border:'1px solid var(--color-assistant-border)',
             borderRadius:10, padding:'9px 12px', fontSize:12,
-            color:'#172033', outline:'none', boxShadow:'inset 0 1px 2px rgba(16,24,40,.03)',
+            color:'var(--color-assistant-text)', outline:'none', boxShadow:'inset 0 1px 2px rgba(6,42,42,.18)',
           }}
         />
         <button onClick={send} style={{
           width:38, height:38, borderRadius:10, border:'none', cursor:'pointer',
-          background:'linear-gradient(135deg,#335CFF,#6D5CE7)',
-          color:'#fff', fontSize:16, display:'flex', alignItems:'center',
+          background:'var(--color-assistant-accent)',
+          color:'var(--color-assistant-accent-text)', fontSize:16, display:'flex', alignItems:'center',
           justifyContent:'center', boxShadow:'0 5px 14px rgba(51,92,255,.22)',
           flexShrink:0,
         }}>➤</button>
