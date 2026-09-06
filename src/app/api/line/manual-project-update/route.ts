@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { Task } from '@/types'
-import { formatIntelligenceLines, getAiRecommendationLines, getProjectIntelligence } from '@/lib/projectIntelligence'
 import { getProjectWithTasks } from '@/lib/projectRepository'
 import { getLineDeliveryConfig } from '@/lib/lineConfig'
+import { buildManualProjectUpdateText } from '@/lib/lineReport'
 
 export async function POST(request: NextRequest) {
   const { projectId } = await request.json().catch(() => ({}))
@@ -16,24 +15,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'LINE configuration is not set.' }, { status: 500 })
   }
 
-  const intelligence = getProjectIntelligence(project, tasks)
-  const date = new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date())
-  const plannedTasks = tasks.filter((task: Task) => intelligence.upcomingPlannedTasks.some(action => action.title === task.title))
-  const aiSummary = [
-    intelligence.attentionTasks.length ? `ติดตาม ${intelligence.attentionTasks.length} งานที่มีความเสี่ยง: ${intelligence.attentionTasks.slice(0, 2).map(task => task.title).join(', ')}` : 'ไม่พบงาน Blocked หรือ At Risk ในขณะนี้',
-    ...plannedTasks.slice(0, 2).map((task: Task) => `แผนปฏิบัติการ: ${task.description ?? task.title}`),
-    ...getAiRecommendationLines(project, intelligence),
-  ]
-
-  const text = [
-    `📊 Project Update — ${project.name}`,
-    `วันที่ ${date}`,
-    '',
-    ...formatIntelligenceLines(project, intelligence),
-    '',
-    '🤖 AI Summary:',
-    ...aiSummary.map(item => `• ${item}`),
-  ].join('\n')
+  const text = buildManualProjectUpdateText(project, tasks)
 
   const response = await fetch('https://api.line.me/v2/bot/message/push', {
     method: 'POST',

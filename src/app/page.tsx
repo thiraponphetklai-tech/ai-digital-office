@@ -311,7 +311,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
     {showResources && activeProject && <ProjectResourcesDialog projectId={activeProject.id} onClose={() => setShowResources(false)} />}
     {showEventLog && activeProject && <ProjectEventLogDialog projectName={activeProject.name} onClose={() => setShowEventLog(false)} />}
     {showUsers && <UserManagementDialog onClose={() => setShowUsers(false)} />}
-    {showLineSettings && <LineSettingsDialog onClose={() => setShowLineSettings(false)} />}
+    {showLineSettings && activeProject && <LineSettingsDialog projectId={activeProject.id} projectName={activeProject.name} onClose={() => setShowLineSettings(false)} />}
     {showProjectSettings && activeProject && (
       <div style={{ position:'fixed', inset:0, zIndex:50, background:'rgba(15,23,42,.38)', display:'grid', placeItems:'center', padding:20 }}>
         <section role="dialog" aria-modal="true" aria-labelledby="project-settings-title" style={{ width:'min(620px, 100%)', maxHeight:'calc(100vh - 40px)', overflowY:'auto', background:'#FFFFFF', borderRadius:16, padding:24, boxShadow:'0 24px 64px rgba(15,23,42,.26)' }}>
