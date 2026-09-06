@@ -65,3 +65,46 @@ React Three Fiber rendering
 - LINE webhook signature validation, reply flow, and command parser.
 - Automated tests and deployment health checks.
 - AI-assisted actions only with explicit confirmation and audit history.
+
+## Prioritized feature backlog
+
+### 1. Project visibility by permission
+
+- Users should see only projects for which they have an explicit membership or
+  assigned access when entering the Project Hub.
+- Enforce the same filter server-side for project, task, resource, LINE, and
+  AI-context endpoints; hiding a project in the UI is not authorization.
+- System Administrators retain cross-project access. Define the access model
+  and default-deny behavior before migration/backfill of existing memberships.
+
+### 2. Multiple WBS owners
+
+- Allow a WBS task to have multiple accountable contributors through the
+  existing `TaskAssignee` relation, while retaining `ownerId` as its primary
+  owner for compatibility.
+- Replace free-text owner editing with a resource picker that supports primary
+  owner plus additional assignees. Show names, not resource IDs, throughout
+  WBS, dashboards, and LINE reports.
+- Decide reporting semantics for multiple owners (for example, show primary
+  owner first followed by additional owners) and preserve workload allocation.
+
+### 3. AI-generated project with example tasks
+
+- Provide a Project Hub flow that asks for project goal, scope, target date,
+  and optional team/resources, then generates a project draft and example WBS
+  tasks using Azure AI Foundry.
+- The AI result must be a preview only. A user explicitly confirms before any
+  project/tasks are persisted, and generated content must be editable first.
+- Guardrails: use supplied inputs only, do not invent completed work or
+  commitments, validate task schema/dates/owners server-side, and keep an
+  audit record of the confirmed creation.
+
+### 4. Ask about project details through LINE
+
+- Extend the LINE webhook from health/logging to verified inbound messages:
+  validate `X-Line-Signature`, map the LINE sender to an application identity,
+  and authorize project access before returning any project information.
+- Support read-only project questions first. Responses use the same grounded,
+  advisory AI guardrails as the application and must not mutate records.
+- Add allow-listing, rate limits, short reply limits, audit logs, and safe
+  fallback responses for unlinked users, unauthorized projects, or AI errors.
