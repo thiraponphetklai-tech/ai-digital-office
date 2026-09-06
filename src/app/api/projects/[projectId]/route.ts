@@ -2,17 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { mapProject } from '@/lib/databaseMappers'
+import { canAccessProject, getCurrentUser } from '@/lib/localAuth'
 
 const include = { calendar: { include: { holidays: true } }, metrics: true, milestones: true, members: true, resources: true } as const
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params
+  const user = await getCurrentUser()
+  if (!user || !await canAccessProject(user, projectId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const project = await db.project.findUnique({ where: { id: projectId }, include })
   return project ? NextResponse.json(mapProject(project)) : NextResponse.json({ error: 'Project not found' }, { status: 404 })
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params
+  const user = await getCurrentUser()
+  if (!user || !await canAccessProject(user, projectId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const body = await request.json()
   const project = await db.$transaction(async (transaction: Prisma.TransactionClient) => {
     if (body.calendar) {

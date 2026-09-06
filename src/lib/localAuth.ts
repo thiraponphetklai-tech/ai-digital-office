@@ -74,3 +74,9 @@ export async function requireSystemAdmin() {
   const user = await getCurrentUser()
   return user && isSystemAdmin(user) ? user : null
 }
+
+export async function canAccessProject(user: AuthUser, projectId: string) {
+  if (user.systemRole === 'SYSTEM_ADMIN' || user.systemRole === 'PORTFOLIO_MANAGER') return true
+  const membership = await db.projectUserMember.findUnique({ where: { projectId_userId: { projectId, userId: user.id } }, select: { expiresAt: true } })
+  return Boolean(membership && (!membership.expiresAt || membership.expiresAt > new Date()))
+}
