@@ -33,6 +33,8 @@ export function ApiDataHydrator() {
         }
       } catch (error) {
         console.error('Unable to load workspace data from the API', error)
+        useProjectStore.getState().setProjects([])
+        useTaskStore.getState().setTasks([])
       }
     }
 
