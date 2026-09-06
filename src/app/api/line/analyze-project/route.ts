@@ -1,6 +1,5 @@
 
 import { NextRequest, NextResponse } from 'next/server'
-import { formatIntelligenceLines, getProjectIntelligence } from '@/lib/projectIntelligence'
 import { getActiveProjectsWithTasks } from '@/lib/projectRepository'
 import { getLineDeliveryConfig } from '@/lib/lineConfig'
 import { buildAiProjectSummary, buildWbsTaskLines } from '@/lib/lineReport'
@@ -23,8 +22,6 @@ export async function POST(request: NextRequest) {
   const date = new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date())
   const messages: { type: 'text'; text: string }[] = []
   for (const { project, tasks, ownerNames } of selectedProjects) {
-    const intelligence = getProjectIntelligence(project, tasks)
-    const followUps = intelligence.wbsFollowUpTasks.slice(0, 3)
     const aiSummary = await buildAiProjectSummary(project, tasks, ownerNames)
 
     messages.push({
@@ -33,12 +30,7 @@ export async function POST(request: NextRequest) {
         `📊 AI Project Analysis — ${project.name}`,
         `วันที่ ${date}`,
         '',
-        ...formatIntelligenceLines(project, intelligence, ownerNames, false),
-        '',
         ...buildWbsTaskLines(tasks, ownerNames),
-        '',
-        followUps.length ? 'งานที่ควรติดตาม:' : 'สถานะการติดตาม:',
-        ...(followUps.length ? followUps.map(task => `• ${task.title} — Owner: ${ownerNames[task.ownerId] ?? task.ownerId}${task.dueDate ? `, due ${task.dueDate}` : ''}${task.blocker ? `, blocker: ${task.blocker}` : ''}`) : ['• ไม่มีงานใกล้กำหนดหรือมี Blocker ในขณะนี้']),
         '',
         '🤖 AI Summary:',
         ...aiSummary.map(item => `• ${item}`),

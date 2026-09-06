@@ -97,15 +97,12 @@ export async function buildAiProjectSummary(project: Project, tasks: Task[], own
 }
 
 export async function buildManualProjectUpdateText(project: Project, tasks: Task[], ownerNames: Record<string, string> = {}) {
-  const intelligence = getProjectIntelligence(project, tasks)
   const date = new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date())
   const aiSummary = await buildAiProjectSummary(project, tasks, ownerNames)
 
   return [
     `📊 Project Update — ${project.name}`,
     `วันที่ ${date}`,
-    '',
-    ...formatIntelligenceLines(project, intelligence, ownerNames, false),
     '',
     ...buildWbsTaskLines(tasks, ownerNames),
     '',
