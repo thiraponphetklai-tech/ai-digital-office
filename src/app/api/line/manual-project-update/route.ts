@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'LINE configuration is not set.' }, { status: 500 })
   }
 
-  const text = buildManualProjectUpdateText(project, tasks, ownerNames)
+  const text = await buildManualProjectUpdateText(project, tasks, ownerNames)
 
   const response = await fetch('https://api.line.me/v2/bot/message/push', {
     method: 'POST',

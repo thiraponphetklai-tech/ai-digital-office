@@ -1,9 +1,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
-import { formatIntelligenceLines, getAiRecommendationLines, getProjectIntelligence } from '@/lib/projectIntelligence'
+import { formatIntelligenceLines, getProjectIntelligence } from '@/lib/projectIntelligence'
 import { getActiveProjectsWithTasks } from '@/lib/projectRepository'
 import { getLineDeliveryConfig } from '@/lib/lineConfig'
-import { buildWbsTaskLines } from '@/lib/lineReport'
+import { buildAiProjectSummary, buildWbsTaskLines } from '@/lib/lineReport'
 
 export async function POST(request: NextRequest) {
   if (request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -21,12 +21,13 @@ export async function POST(request: NextRequest) {
   if (!selectedProjects.length) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
 
   const date = new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date())
-  const messages = selectedProjects.map(({ project, tasks, ownerNames }) => {
+  const messages: { type: 'text'; text: string }[] = []
+  for (const { project, tasks, ownerNames } of selectedProjects) {
     const intelligence = getProjectIntelligence(project, tasks)
     const followUps = intelligence.wbsFollowUpTasks.slice(0, 3)
-    const recommendations = getAiRecommendationLines(project, intelligence)
+    const aiSummary = await buildAiProjectSummary(project, tasks, ownerNames)
 
-    return {
+    messages.push({
       type: 'text' as const,
       text: [
         `📊 AI Project Analysis — ${project.name}`,
@@ -39,11 +40,11 @@ export async function POST(request: NextRequest) {
         followUps.length ? 'งานที่ควรติดตาม:' : 'สถานะการติดตาม:',
         ...(followUps.length ? followUps.map(task => `• ${task.title} — Owner: ${ownerNames[task.ownerId] ?? task.ownerId}${task.dueDate ? `, due ${task.dueDate}` : ''}${task.blocker ? `, blocker: ${task.blocker}` : ''}`) : ['• ไม่มีงานใกล้กำหนดหรือมี Blocker ในขณะนี้']),
         '',
-        '🤖 AI Recommendation:',
-        ...recommendations.map(item => `• ${item}`),
+        '🤖 AI Summary:',
+        ...aiSummary.map(item => `• ${item}`),
       ].join('\n'),
-    }
-  })
+    })
+  }
 
   const response = await fetch('https://api.line.me/v2/bot/message/push', {
     method: 'POST',
