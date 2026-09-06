@@ -72,6 +72,9 @@ React Three Fiber rendering
 
 - Users should see only projects for which they have an explicit membership or
   assigned access when entering the Project Hub.
+- The creator is automatically granted access to a newly created project;
+  `STANDARD_USER` may create projects and initially sees only projects they
+  created or were explicitly granted access to.
 - Enforce the same filter server-side for project, task, resource, LINE, and
   AI-context endpoints; hiding a project in the UI is not authorization.
 - System Administrators retain cross-project access. Define the access model
@@ -95,6 +98,9 @@ React Three Fiber rendering
   tasks using Azure AI Foundry.
 - The AI result must be a preview only. A user explicitly confirms before any
   project/tasks are persisted, and generated content must be editable first.
+- `STANDARD_USER` may confirm and create their own generated project. The
+  creation transaction must also create their project membership so they can
+  see the new project immediately.
 - Guardrails: use supplied inputs only, do not invent completed work or
   commitments, validate task schema/dates/owners server-side, and keep an
   audit record of the confirmed creation.
