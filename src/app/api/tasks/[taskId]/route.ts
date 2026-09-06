@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { mapTask } from '@/lib/databaseMappers'
+import { getCurrentUser } from '@/lib/localAuth'
 
 const include = { assignees: true, dependencies: true } as const
 
@@ -25,4 +26,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     })
   }).catch(() => null)
   return task ? NextResponse.json(mapTask(task)) : NextResponse.json({ error: 'Task not found or update failed' }, { status: 404 })
+}
+
+export async function DELETE(_: NextRequest, { params }: { params: Promise<{ taskId: string }> }) {
+  if (!await getCurrentUser()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { taskId } = await params
+  const task = await db.task.delete({ where: { id: taskId }, select: { id: true } }).catch(() => null)
+  return task ? NextResponse.json({ deleted: true, taskId: task.id }) : NextResponse.json({ error: 'Task not found or delete failed' }, { status: 404 })
 }

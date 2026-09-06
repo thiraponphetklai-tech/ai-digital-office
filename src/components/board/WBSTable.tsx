@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react'
-import { usePrefsStore, useTaskStore } from '@/store'
+import { usePrefsStore, useResourceStore, useTaskStore } from '@/store'
 import type { Task, TaskStatus, TaskPriority } from '@/types'
 
 const STATUS_CFG: Record<TaskStatus, { label: string; color: string; bg: string }> = {
@@ -21,7 +21,8 @@ const PRIORITY_CFG: Record<TaskPriority, { label: string; color: string }> = {
 type SortKey = 'title' | 'status' | 'priority' | 'progress' | 'dueDate' | 'ownerId' | 'makerId' | 'checkerId'
 
 export function WBSTable() {
-  const { tasks, updateTaskStatus, updateTaskProgress, updateTaskDetails } = useTaskStore()
+  const { tasks, updateTaskStatus, updateTaskProgress, updateTaskDetails, setTasks } = useTaskStore()
+  const { resources } = useResourceStore()
   const activeProjectId = usePrefsStore(s => s.prefs.activeProjectId)
   const projectTasks = tasks.filter(task => task.projectId === activeProjectId)
 
@@ -32,6 +33,7 @@ export function WBSTable() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [editing,  setEditing]  = useState<{ id: string; field: string } | null>(null)
   const [editVal,  setEditVal]  = useState('')
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null)
 
   // Sort + filter
   const sorted = [...projectTasks]
@@ -92,6 +94,21 @@ export function WBSTable() {
     setEditing(null)
   }
 
+  async function deleteTask(task: Task) {
+    if (!window.confirm(`Delete task “${task.title}”? This cannot be undone.`)) return
+    setDeletingTaskId(task.id)
+    try {
+      const response = await fetch(`/api/tasks/${encodeURIComponent(task.id)}`, { method: 'DELETE' })
+      const result = await response.json().catch(() => ({})) as { error?: string }
+      if (!response.ok) throw new Error(result.error ?? 'Unable to delete task.')
+      setTasks(tasks.filter(item => item.id !== task.id))
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Unable to delete task.')
+    } finally {
+      setDeletingTaskId(null)
+    }
+  }
+
   const daysLeft = (due?: string) => due
     ? Math.ceil((new Date(due).getTime() - Date.now()) / 86400000)
     : null
@@ -144,7 +161,7 @@ export function WBSTable() {
       {/* Table */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
         <div style={{ background: '#FFFFFF', border: '1px solid #E5EAF2', borderRadius: 12, overflowX: 'auto' }}>
-          <table style={{ width: '100%', minWidth: 1510, borderCollapse: 'collapse', fontSize: 12 }}> 
+          <table style={{ width: '100%', minWidth: 1580, borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E5EAF2' }}>
                 <Th width={32} />
@@ -160,6 +177,7 @@ export function WBSTable() {
                 <Th label="Planning" width={150} />
                 <Th label="Due Date" sortKey="dueDate" current={sortKey} asc={sortAsc} onSort={toggleSort} width={110} />
                 <Th label="Risk" width={80} />
+                <Th label="" width={58} />
               </tr>
             </thead>
             <tbody>
@@ -178,6 +196,8 @@ export function WBSTable() {
                 const isEditChecker  = editing?.id === task.id && editing.field === 'checkerId'
                 const isEditDueDate  = editing?.id === task.id && editing.field === 'dueDate'
                 const isEditPlanning = editing?.id === task.id && editing.field === 'planning'
+                const owner = resources.find(resource => resource.id === task.ownerId)
+                const ownerName = owner?.name ?? task.ownerId
 
                 return (
                   <React.Fragment key={task.id}>
@@ -258,7 +278,7 @@ export function WBSTable() {
 
                       {/* Owner */}
                       <td style={{ padding: '10px 8px', width: 80 }}>
-                        {isEditOwner ? <input autoFocus value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => commitEdit(task)} onKeyDown={e => { if (e.key === 'Enter') commitEdit(task); if (e.key === 'Escape') setEditing(null) }} style={{ width:'100%', fontSize:11, border:'1px solid #C7D7FF', borderRadius:6, padding:'4px 5px', outline:'none' }} /> : <div onClick={() => startEdit(task.id, 'ownerId', task.ownerId)} title="Click to edit owner" style={{ display: 'flex', alignItems: 'center', gap: 6, cursor:'pointer' }}><div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#335CFF,#6D5CE7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#fff', flexShrink: 0 }}>{task.ownerId.slice(-2).toUpperCase()}</div><span style={{ fontSize: 11, color: '#667085' }}>{task.ownerId}</span></div>}
+                        {isEditOwner ? <input autoFocus value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => commitEdit(task)} onKeyDown={e => { if (e.key === 'Enter') commitEdit(task); if (e.key === 'Escape') setEditing(null) }} style={{ width:'100%', fontSize:11, border:'1px solid #C7D7FF', borderRadius:6, padding:'4px 5px', outline:'none' }} /> : <div onClick={() => startEdit(task.id, 'ownerId', task.ownerId)} title="Click to edit owner" style={{ display: 'flex', alignItems: 'center', gap: 6, cursor:'pointer' }}><div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#335CFF,#6D5CE7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#fff', flexShrink: 0 }}>{ownerName.slice(0, 2).toUpperCase()}</div><span style={{ fontSize: 11, color: '#667085' }}>{ownerName}</span></div>}
                       </td>
 
                       {/* Maker */}
@@ -322,12 +342,15 @@ export function WBSTable() {
                           {task.riskLevel}
                         </span>
                       </td>
+                      <td style={{ padding:'10px 8px', width:58, textAlign:'center' }}>
+                        <button type="button" onClick={() => void deleteTask(task)} disabled={deletingTaskId === task.id} aria-label={`Delete ${task.title}`} title="Delete task" style={{ border:'1px solid #FECACA', borderRadius:6, padding:'4px 6px', cursor:deletingTaskId === task.id ? 'not-allowed' : 'pointer', background:'#FFF5F5', color:'#B91C1C', fontSize:11, opacity:deletingTaskId === task.id ? .55 : 1 }}>{deletingTaskId === task.id ? '…' : 'Delete'}</button>
+                      </td>
                     </tr>
 
                     {/* Expanded detail row */}
                     {exp && (
                       <tr style={{ background: '#FAFBFD', borderBottom: '1px solid #F1F5F9' }}>
-                        <td colSpan={13} style={{ padding: '8px 48px 12px' }}>
+                        <td colSpan={14} style={{ padding: '8px 48px 12px' }}>
                           <div style={{ display: 'flex', gap: 20 }}>
                             {task.aiRiskAssessment && (
                               <div style={{
