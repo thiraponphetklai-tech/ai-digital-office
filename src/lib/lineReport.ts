@@ -1,7 +1,7 @@
 import type { Project, Task } from '@/types'
 import { formatIntelligenceLines, getAiRecommendationLines, getProjectIntelligence } from '@/lib/projectIntelligence'
 
-export function buildManualProjectUpdateText(project: Project, tasks: Task[]) {
+export function buildManualProjectUpdateText(project: Project, tasks: Task[], ownerNames: Record<string, string> = {}) {
   const intelligence = getProjectIntelligence(project, tasks)
   const date = new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date())
   const plannedTasks = tasks.filter(task => intelligence.upcomingPlannedTasks.some(action => action.title === task.title))
@@ -15,7 +15,7 @@ export function buildManualProjectUpdateText(project: Project, tasks: Task[]) {
     `📊 Project Update — ${project.name}`,
     `วันที่ ${date}`,
     '',
-    ...formatIntelligenceLines(project, intelligence),
+    ...formatIntelligenceLines(project, intelligence, ownerNames),
     '',
     '🤖 AI Summary:',
     ...aiSummary.map(item => `• ${item}`),

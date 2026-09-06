@@ -2,7 +2,7 @@
 import React, { useRef, useEffect } from 'react'
 import {
   useTaskStore, useEventStore, useOfficeStore, useProjectStore,
-  usePrefsStore, useChatStore,
+  usePrefsStore, useChatStore, waitForTaskPersistence,
 } from '@/store'
 import { ProjectHub } from '@/components/ProjectHub'
 import { ApiDataHydrator } from '@/components/ApiDataHydrator'
@@ -133,6 +133,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
     setLineUpdateState('sending')
     setLineUpdateError('')
     try {
+      await waitForTaskPersistence()
       const response = await fetch('/api/line/manual-project-update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

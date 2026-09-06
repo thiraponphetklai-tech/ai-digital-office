@@ -1,6 +1,5 @@
 
 import { NextRequest, NextResponse } from 'next/server'
-import type { Task } from '@/types'
 import { formatIntelligenceLines, getAiRecommendationLines, getProjectIntelligence } from '@/lib/projectIntelligence'
 import { getActiveProjectsWithTasks } from '@/lib/projectRepository'
 import { getLineDeliveryConfig } from '@/lib/lineConfig'
@@ -21,9 +20,9 @@ export async function POST(request: NextRequest) {
   if (!selectedProjects.length) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
 
   const date = new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeZone: 'Asia/Bangkok' }).format(new Date())
-  const messages = selectedProjects.map(({ project, tasks }) => {
+  const messages = selectedProjects.map(({ project, tasks, ownerNames }) => {
     const intelligence = getProjectIntelligence(project, tasks)
-    const followUps = [...intelligence.attentionTasks, ...tasks.filter((task: Task) => task.status === 'IN_PROGRESS')].slice(0, 3)
+    const followUps = intelligence.wbsFollowUpTasks.slice(0, 3)
     const recommendations = getAiRecommendationLines(project, intelligence)
 
     return {
@@ -32,10 +31,10 @@ export async function POST(request: NextRequest) {
         `📊 AI Project Analysis — ${project.name}`,
         `วันที่ ${date}`,
         '',
-        ...formatIntelligenceLines(project, intelligence),
+        ...formatIntelligenceLines(project, intelligence, ownerNames),
         '',
         followUps.length ? 'งานที่ควรติดตาม:' : 'สถานะการติดตาม:',
-        ...(followUps.length ? followUps.map(task => `• ${task.title} — ${task.blocker || task.description || task.status}`) : ['• ไม่มีงาน Blocked หรือ At Risk ในขณะนี้']),
+        ...(followUps.length ? followUps.map(task => `• ${task.title} — Owner: ${ownerNames[task.ownerId] ?? task.ownerId}${task.dueDate ? `, due ${task.dueDate}` : ''}${task.blocker ? `, blocker: ${task.blocker}` : ''}`) : ['• ไม่มีงานใกล้กำหนดหรือมี Blocker ในขณะนี้']),
         '',
         '🤖 AI Recommendation:',
         ...recommendations.map(item => `• ${item}`),

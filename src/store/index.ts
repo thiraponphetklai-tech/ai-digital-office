@@ -16,16 +16,33 @@ import {
   DEFAULT_USER_PREFS,
 } from '@/data/mockData'
 
-async function persistTask(task: Task) {
-  try {
+const pendingTaskWrites = new Set<Promise<void>>()
+let latestTaskWriteError: Error | null = null
+
+function persistTask(task: Task) {
+  const write = (async () => {
     const response = await fetch(`/api/tasks/${encodeURIComponent(task.id)}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(task),
     })
     if (!response.ok) throw new Error(`Task update failed (${response.status})`)
-  } catch (error) {
+  })()
+
+  pendingTaskWrites.add(write)
+  void write.catch(error => {
+    latestTaskWriteError = error instanceof Error ? error : new Error('Unable to persist task update')
     console.error('Unable to persist task update', error)
+  }).finally(() => pendingTaskWrites.delete(write))
+}
+
+/** Wait for WBS edits already made in this browser to reach PostgreSQL. */
+export async function waitForTaskPersistence() {
+  while (pendingTaskWrites.size > 0) await Promise.allSettled([...pendingTaskWrites])
+  if (latestTaskWriteError) {
+    const error = latestTaskWriteError
+    latestTaskWriteError = null
+    throw error
   }
 }
 

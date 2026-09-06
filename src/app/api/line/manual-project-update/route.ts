@@ -8,14 +8,14 @@ export async function POST(request: NextRequest) {
   if (typeof projectId !== 'string') return NextResponse.json({ error: 'projectId is required' }, { status: 400 })
   const projectData = await getProjectWithTasks(projectId)
   if (!projectData) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-  const { project, tasks } = projectData
+  const { project, tasks, ownerNames } = projectData
 
   const config = await getLineDeliveryConfig()
   if (!config) {
     return NextResponse.json({ error: 'LINE configuration is not set.' }, { status: 500 })
   }
 
-  const text = buildManualProjectUpdateText(project, tasks)
+  const text = buildManualProjectUpdateText(project, tasks, ownerNames)
 
   const response = await fetch('https://api.line.me/v2/bot/message/push', {
     method: 'POST',
