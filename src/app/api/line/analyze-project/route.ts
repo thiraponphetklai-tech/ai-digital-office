@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { formatIntelligenceLines, getAiRecommendationLines, getProjectIntelligence } from '@/lib/projectIntelligence'
 import { getActiveProjectsWithTasks } from '@/lib/projectRepository'
 import { getLineDeliveryConfig } from '@/lib/lineConfig'
+import { buildWbsTaskLines } from '@/lib/lineReport'
 
 export async function POST(request: NextRequest) {
   if (request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -32,6 +33,8 @@ export async function POST(request: NextRequest) {
         `วันที่ ${date}`,
         '',
         ...formatIntelligenceLines(project, intelligence, ownerNames),
+        '',
+        ...buildWbsTaskLines(tasks, ownerNames),
         '',
         followUps.length ? 'งานที่ควรติดตาม:' : 'สถานะการติดตาม:',
         ...(followUps.length ? followUps.map(task => `• ${task.title} — Owner: ${ownerNames[task.ownerId] ?? task.ownerId}${task.dueDate ? `, due ${task.dueDate}` : ''}${task.blocker ? `, blocker: ${task.blocker}` : ''}`) : ['• ไม่มีงานใกล้กำหนดหรือมี Blocker ในขณะนี้']),
