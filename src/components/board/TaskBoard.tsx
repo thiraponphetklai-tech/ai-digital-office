@@ -152,7 +152,7 @@ export function TaskBoard() {
 
       {/* Main content */}
       {viewMode === 'wbs' ? (
-        <WBSTable />
+        <WBSTable onOpenTask={setSelectedTask} />
       ) : (
         <div style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden', padding: '16px 20px' }}>
           <DndContext

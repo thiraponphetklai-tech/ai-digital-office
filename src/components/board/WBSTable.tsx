@@ -20,7 +20,7 @@ const PRIORITY_CFG: Record<TaskPriority, { label: string; color: string }> = {
 
 type SortKey = 'title' | 'status' | 'priority' | 'progress' | 'dueDate' | 'ownerId' | 'makerId' | 'checkerId'
 
-export function WBSTable() {
+export function WBSTable({ onOpenTask }: { onOpenTask: (task: Task) => void }) {
   const { tasks, updateTaskStatus, updateTaskProgress, updateTaskDetails, setTasks } = useTaskStore()
   const { resources } = useResourceStore()
   const activeProjectId = usePrefsStore(s => s.prefs.activeProjectId)
@@ -209,6 +209,8 @@ export function WBSTable() {
                     }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#F0F4FF')}
                       onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? '#FFFFFF' : '#FAFBFD')}
+                      onDoubleClick={() => onOpenTask(task)}
+                      title="Double-click to open task detail"
                     >
                       {/* Expand */}
                       <td style={{ padding: '10px 6px', textAlign: 'center', width: 32 }}>
