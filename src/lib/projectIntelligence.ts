@@ -78,9 +78,9 @@ export function getAiRecommendationLines(project: Project, intelligence: Project
   return ['โครงการอยู่ในสถานะปกติ ให้ติดตาม milestone ถัดไปและงานกำลังดำเนินการอย่างต่อเนื่อง']
 }
 
-export function formatIntelligenceLines(project: Project, intelligence: ProjectIntelligence, ownerNames: Record<string, string> = {}) {
+export function formatIntelligenceLines(project: Project, intelligence: ProjectIntelligence, ownerNames: Record<string, string> = {}, includeWbsProgress = true) {
   return [
-    `WBS progress: ${Math.round(intelligence.progress)}% | Schedule: ${intelligence.scheduleProgress}%`,
+    ...(includeWbsProgress ? [`WBS progress: ${Math.round(intelligence.progress)}% | Schedule: ${intelligence.scheduleProgress}%`] : []),
     `Schedule status: ${intelligence.scheduleStatus} | Remaining: ${intelligence.remainingWorkingDays} working days`,
     ...(project.metrics?.map(metric => `• ${metric.label}: ${metric.completed.toLocaleString()} / ${metric.total.toLocaleString()} ${metric.unit ?? 'items'} (${((metric.completed / metric.total) * 100).toFixed(2)}%)${metric.detail ? ` — ${metric.detail}` : ''}`) ?? []),
     `✅ Done: ${intelligence.done} | 🔵 In progress: ${intelligence.inProgress} | ⚠️ At risk: ${intelligence.atRisk} | 🔴 Blocked: ${intelligence.blocked} | ⏳ To do: ${intelligence.todo}`,

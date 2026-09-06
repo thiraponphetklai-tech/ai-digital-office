@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
         `📊 AI Project Analysis — ${project.name}`,
         `วันที่ ${date}`,
         '',
-        ...formatIntelligenceLines(project, intelligence, ownerNames),
+        ...formatIntelligenceLines(project, intelligence, ownerNames, false),
         '',
         ...buildWbsTaskLines(tasks, ownerNames),
         '',

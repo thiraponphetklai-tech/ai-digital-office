@@ -105,7 +105,7 @@ export async function buildManualProjectUpdateText(project: Project, tasks: Task
     `📊 Project Update — ${project.name}`,
     `วันที่ ${date}`,
     '',
-    ...formatIntelligenceLines(project, intelligence, ownerNames),
+    ...formatIntelligenceLines(project, intelligence, ownerNames, false),
     '',
     ...buildWbsTaskLines(tasks, ownerNames),
     '',
