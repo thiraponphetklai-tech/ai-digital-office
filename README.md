@@ -26,6 +26,7 @@ DATABASE_URL=
 LINE_CHANNEL_ACCESS_TOKEN=
 LINE_DAILY_SUMMARY_RECIPIENT_ID=
 CRON_SECRET=
+LINE_CONFIG_ENCRYPTION_KEY=
 FOUNDRY_OPENAI_ENDPOINT=
 FOUNDRY_MODEL_DEPLOYMENT=
 AZURE_CLIENT_ID=
@@ -33,7 +34,9 @@ AZURE_CLIENT_ID=
 
 `FOUNDRY_*` and `AZURE_CLIENT_ID` are required only when testing the AI chat.
 Use a credential supported by `DefaultAzureCredential`; production uses managed
-identity. Never commit `.env` files.
+identity. `LINE_CONFIG_ENCRYPTION_KEY` must be a base64-encoded 32-byte key
+when System Admins manage LINE settings through the application. Never commit
+`.env` files.
 
 ```powershell
 npm ci

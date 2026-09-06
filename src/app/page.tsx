@@ -17,6 +17,7 @@ import { ResourceWorkloadView } from '@/components/ResourceWorkloadView'
 import { ProjectCalendarView } from '@/components/ProjectCalendarView'
 import { ProjectGanttView } from '@/components/ProjectGanttView'
 import { UserManagementDialog } from '@/components/UserManagementDialog'
+import { LineSettingsDialog } from '@/components/LineSettingsDialog'
 
 // OfficeScene ใช้ Three.js — ต้อง dynamic import (ไม่รัน SSR)
 const OfficeScene = dynamic(
@@ -108,6 +109,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
   const [showEventLog, setShowEventLog] = React.useState(false)
   const [showTools, setShowTools] = React.useState(false)
   const [showUsers, setShowUsers] = React.useState(false)
+  const [showLineSettings, setShowLineSettings] = React.useState(false)
   const [currentUser, setCurrentUser] = React.useState<{ displayName: string; systemRole: string } | null>(null)
   React.useEffect(() => { void fetch('/api/auth/me').then(response => response.ok ? response.json() : null).then(data => setCurrentUser(data?.user ?? null)) }, [])
   const [targetDateDraft, setTargetDateDraft] = React.useState('')
@@ -270,6 +272,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
           <button onClick={() => { setShowTools(false); setShowResources(true) }} style={toolMenuButton}>Resources & players</button>
           <button onClick={() => { setShowTools(false); setShowEventLog(true) }} style={toolMenuButton}>Project event log</button>
           <button onClick={() => { setShowTools(false); openLineUpdate() }} style={{ ...toolMenuButton, color:'#047857' }}>Send LINE update</button>
+          {currentUser?.systemRole === 'SYSTEM_ADMIN' && <button onClick={() => { setShowTools(false); setShowLineSettings(true) }} style={{ ...toolMenuButton, color:'#0F766E' }}>LINE integration</button>}
           {currentUser?.systemRole === 'SYSTEM_ADMIN' && <button onClick={() => { setShowTools(false); setShowUsers(true) }} style={{ ...toolMenuButton, color:'#4338CA' }}>User management</button>}
         </div>}
       </div>
@@ -308,6 +311,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
     {showResources && activeProject && <ProjectResourcesDialog projectId={activeProject.id} onClose={() => setShowResources(false)} />}
     {showEventLog && activeProject && <ProjectEventLogDialog projectName={activeProject.name} onClose={() => setShowEventLog(false)} />}
     {showUsers && <UserManagementDialog onClose={() => setShowUsers(false)} />}
+    {showLineSettings && <LineSettingsDialog onClose={() => setShowLineSettings(false)} />}
     {showProjectSettings && activeProject && (
       <div style={{ position:'fixed', inset:0, zIndex:50, background:'rgba(15,23,42,.38)', display:'grid', placeItems:'center', padding:20 }}>
         <section role="dialog" aria-modal="true" aria-labelledby="project-settings-title" style={{ width:'min(620px, 100%)', maxHeight:'calc(100vh - 40px)', overflowY:'auto', background:'#FFFFFF', borderRadius:16, padding:24, boxShadow:'0 24px 64px rgba(15,23,42,.26)' }}>

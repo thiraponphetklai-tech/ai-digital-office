@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { Task } from '@/types'
 import { formatIntelligenceLines, getAiRecommendationLines, getProjectIntelligence } from '@/lib/projectIntelligence'
 import { getProjectWithTasks } from '@/lib/projectRepository'
+import { getLineDeliveryConfig } from '@/lib/lineConfig'
 
 export async function POST(request: NextRequest) {
   const { projectId } = await request.json().catch(() => ({}))
@@ -10,10 +11,9 @@ export async function POST(request: NextRequest) {
   if (!projectData) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
   const { project, tasks } = projectData
 
-  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN
-  const recipientId = process.env.LINE_DAILY_SUMMARY_RECIPIENT_ID
-  if (!token || !recipientId) {
-    return NextResponse.json({ error: 'LINE environment variables are not configured' }, { status: 500 })
+  const config = await getLineDeliveryConfig()
+  if (!config) {
+    return NextResponse.json({ error: 'LINE configuration is not set.' }, { status: 500 })
   }
 
   const intelligence = getProjectIntelligence(project, tasks)
@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
 
   const response = await fetch('https://api.line.me/v2/bot/message/push', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ to: recipientId, messages: [{ type: 'text', text }] }),
+    headers: { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to: config.recipientId, messages: [{ type: 'text', text }] }),
   })
 
   if (!response.ok) {

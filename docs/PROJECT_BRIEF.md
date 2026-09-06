@@ -21,6 +21,8 @@ server source of truth.
   resource views.
 - Rule-based schedule intelligence and outbound LINE project reports.
 - Azure AI Foundry-backed chat that uses project context and is advisory only.
+- System Admin-only LINE integration settings with encrypted PostgreSQL storage;
+  the UI exposes configuration status and a masked recipient ID only.
 - 3D office, event bus, visual-state mapper, and mock agent experience for
   presentation and interaction flows.
 

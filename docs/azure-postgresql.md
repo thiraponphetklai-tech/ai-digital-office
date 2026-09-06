@@ -14,6 +14,7 @@ Configure these as Azure Container Apps secrets or Key Vault-backed settings.
 | `LINE_CHANNEL_ACCESS_TOKEN` | LINE Messaging API bearer token. |
 | `LINE_DAILY_SUMMARY_RECIPIENT_ID` | LINE group or user recipient. |
 | `CRON_SECRET` | Secret for protected report endpoints. |
+| `LINE_CONFIG_ENCRYPTION_KEY` | Base64-encoded 32-byte key that encrypts LINE settings stored in PostgreSQL. |
 | `FOUNDRY_OPENAI_ENDPOINT` | Azure AI Foundry OpenAI endpoint. |
 | `FOUNDRY_MODEL_DEPLOYMENT` | AI Foundry model deployment name. |
 | `AZURE_CLIENT_ID` | Optional user-assigned managed identity client ID. |
@@ -21,6 +22,11 @@ Configure these as Azure Container Apps secrets or Key Vault-backed settings.
 The workload identity needs access to the configured Foundry resource. The
 database connection must require TLS. Prefer private networking; if public
 access is necessary, allow only the approved application egress addresses.
+
+LINE settings entered by a System Admin are encrypted in PostgreSQL and are
+never returned by the UI or Admin API. Keep `LINE_CONFIG_ENCRYPTION_KEY` in
+Azure Container Apps secrets or a Key Vault reference. Rotating it requires
+decrypting and re-encrypting existing settings first; do not replace it blindly.
 
 ## Schema deployment
 

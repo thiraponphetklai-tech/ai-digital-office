@@ -3,16 +3,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { Task } from '@/types'
 import { formatIntelligenceLines, getAiRecommendationLines, getProjectIntelligence } from '@/lib/projectIntelligence'
 import { getActiveProjectsWithTasks } from '@/lib/projectRepository'
+import { getLineDeliveryConfig } from '@/lib/lineConfig'
 
 export async function POST(request: NextRequest) {
   if (request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN
-  const recipientId = process.env.LINE_DAILY_SUMMARY_RECIPIENT_ID
-  if (!token || !recipientId) {
-    return NextResponse.json({ error: 'LINE environment variables are not configured' }, { status: 500 })
+  const config = await getLineDeliveryConfig()
+  if (!config) {
+    return NextResponse.json({ error: 'LINE configuration is not set.' }, { status: 500 })
   }
 
   const { projectId, projectIds } = await request.json().catch(() => ({}))
@@ -45,8 +45,8 @@ export async function POST(request: NextRequest) {
 
   const response = await fetch('https://api.line.me/v2/bot/message/push', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ to: recipientId, messages }),
+    headers: { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to: config.recipientId, messages }),
   })
 
   if (!response.ok) {
