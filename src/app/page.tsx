@@ -112,6 +112,10 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
   const [showLineSettings, setShowLineSettings] = React.useState(false)
   const [currentUser, setCurrentUser] = React.useState<{ displayName: string; systemRole: string } | null>(null)
   React.useEffect(() => { void fetch('/api/auth/me').then(response => response.ok ? response.json() : null).then(data => setCurrentUser(data?.user ?? null)) }, [])
+  const [projectNameDraft, setProjectNameDraft] = React.useState('')
+  const [projectCodeDraft, setProjectCodeDraft] = React.useState('')
+  const [projectDescriptionDraft, setProjectDescriptionDraft] = React.useState('')
+  const [projectStatusDraft, setProjectStatusDraft] = React.useState<'ACTIVE' | 'ON_HOLD' | 'COMPLETED'>('ACTIVE')
   const [targetDateDraft, setTargetDateDraft] = React.useState('')
   const [workingDaysDraft, setWorkingDaysDraft] = React.useState<number[]>([])
   const [holidaysDraft, setHolidaysDraft] = React.useState<{ date: string; name: string }[]>([])
@@ -156,6 +160,10 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
 
   function openProjectSettings() {
     if (!activeProject) return
+    setProjectNameDraft(activeProject.name)
+    setProjectCodeDraft(activeProject.code ?? '')
+    setProjectDescriptionDraft(activeProject.description ?? '')
+    setProjectStatusDraft(activeProject.status)
     setTargetDateDraft(activeProject.targetDate)
     setWorkingDaysDraft(activeProject.calendar?.workingDays ?? [1, 2, 3, 4, 5])
     setHolidaysDraft(activeProject.calendar?.holidays ?? [])
@@ -196,6 +204,10 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
 
   async function saveProjectSettings() {
     if (!activeProject) return
+    if (!projectNameDraft.trim()) {
+      setSettingsError('กรุณาระบุชื่อโครงการ')
+      return
+    }
     if (workingDaysDraft.length === 0) {
       setSettingsError('กรุณาเลือกอย่างน้อย 1 วันทำงาน')
       return
@@ -211,7 +223,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
       const response = await fetch(`/api/projects/${encodeURIComponent(activeProject.id)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetDate: targetDateDraft, calendar: { workingDays: workingDaysDraft, holidays: holidaysDraft }, metrics: metricsDraft, milestones: milestonesDraft }),
+        body: JSON.stringify({ name: projectNameDraft.trim(), code: projectCodeDraft.trim() || null, description: projectDescriptionDraft.trim() || null, status: projectStatusDraft, targetDate: targetDateDraft, calendar: { workingDays: workingDaysDraft, holidays: holidaysDraft }, metrics: metricsDraft, milestones: milestonesDraft }),
       })
       const result = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(result.error || 'Unable to save project settings.')
@@ -269,7 +281,7 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
       <div style={{ position:'relative' }}>
         <button onClick={() => setShowTools(current => !current)} disabled={!activeProject} style={{ border:'1px solid rgba(255,255,255,.38)', borderRadius:8, padding:'6px 10px', background:'rgba(255,255,255,.1)', color:'var(--color-topbar-text)', cursor:activeProject ? 'pointer' : 'not-allowed', fontSize:11, fontWeight:700, opacity:activeProject ? 1 : .5 }}>Project tools ▾</button>
         {showTools && activeProject && <div style={{ position:'absolute', top:34, left:0, zIndex:40, minWidth:185, padding:6, border:`1px solid ${T.border}`, borderRadius:10, background:'#FFFFFF', boxShadow:'0 12px 30px rgba(16,24,40,.14)' }}>
-          <button onClick={() => { setShowTools(false); openProjectSettings() }} style={toolMenuButton}>Schedule & calendar</button>
+          <button onClick={() => { setShowTools(false); openProjectSettings() }} style={toolMenuButton}>Project settings</button>
           <button onClick={() => { setShowTools(false); setShowResources(true) }} style={toolMenuButton}>Resources & players</button>
           <button onClick={() => { setShowTools(false); setShowEventLog(true) }} style={toolMenuButton}>Project event log</button>
           <button onClick={() => { setShowTools(false); openLineUpdate() }} style={{ ...toolMenuButton, color:'#047857' }}>Send LINE update</button>
@@ -317,10 +329,16 @@ function Topbar({ onOpenProjectHub }: { onOpenProjectHub: () => void }) {
       <div style={{ position:'fixed', inset:0, zIndex:50, background:'rgba(15,23,42,.38)', display:'grid', placeItems:'center', padding:20 }}>
         <section role="dialog" aria-modal="true" aria-labelledby="project-settings-title" style={{ width:'min(620px, 100%)', maxHeight:'calc(100vh - 40px)', overflowY:'auto', background:'#FFFFFF', borderRadius:16, padding:24, boxShadow:'0 24px 64px rgba(15,23,42,.26)' }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'start', gap:16 }}>
-            <div><div style={{ fontSize:11, fontWeight:800, letterSpacing:'.08em', color:T.indigo }}>PROJECT SETTINGS</div><h2 id="project-settings-title" style={{ margin:'7px 0 4px', fontSize:20 }}>Schedule & Calendar</h2><p style={{ margin:0, color:T.textSub, fontSize:12 }}>{activeProject.name}</p></div>
+            <div><div style={{ fontSize:11, fontWeight:800, letterSpacing:'.08em', color:T.indigo }}>PROJECT SETTINGS</div><h2 id="project-settings-title" style={{ margin:'7px 0 4px', fontSize:20 }}>Project settings</h2><p style={{ margin:0, color:T.textSub, fontSize:12 }}>{activeProject.name}</p></div>
             <button type="button" onClick={() => setShowProjectSettings(false)} aria-label="Close" style={{ width:28, height:28, border:'1px solid #E5EAF2', borderRadius:7, background:'#FFFFFF', cursor:'pointer', color:'#667085', fontSize:20, lineHeight:1 }}>×</button>
           </div>
           <div style={{ marginTop:20 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'minmax(0, 1fr) 150px', gap:10 }}>
+              <label style={{ display:'block', color:'#475467', fontSize:12, fontWeight:700 }}>Project name<input value={projectNameDraft} onChange={event => setProjectNameDraft(event.target.value)} style={{ display:'block', width:'100%', marginTop:6, border:'1px solid #D8DEE9', borderRadius:8, padding:'9px 10px', color:'#172033', background:'#FFFFFF', fontSize:13, boxSizing:'border-box' }} /></label>
+              <label style={{ display:'block', color:'#475467', fontSize:12, fontWeight:700 }}>Project code<input value={projectCodeDraft} onChange={event => setProjectCodeDraft(event.target.value)} placeholder="Optional" style={{ display:'block', width:'100%', marginTop:6, border:'1px solid #D8DEE9', borderRadius:8, padding:'9px 10px', color:'#172033', background:'#FFFFFF', fontSize:13, boxSizing:'border-box' }} /></label>
+            </div>
+            <label style={{ display:'block', marginTop:14, color:'#475467', fontSize:12, fontWeight:700 }}>Project description<textarea value={projectDescriptionDraft} onChange={event => setProjectDescriptionDraft(event.target.value)} rows={3} placeholder="Describe the project scope or expected outcome" style={{ display:'block', width:'100%', marginTop:6, border:'1px solid #D8DEE9', borderRadius:8, padding:'9px 10px', color:'#172033', background:'#FFFFFF', fontSize:13, boxSizing:'border-box', resize:'vertical', fontFamily:'inherit' }} /></label>
+            <label style={{ display:'block', marginTop:14, color:'#475467', fontSize:12, fontWeight:700 }}>Project status<select value={projectStatusDraft} onChange={event => setProjectStatusDraft(event.target.value as 'ACTIVE' | 'ON_HOLD' | 'COMPLETED')} style={{ display:'block', width:'100%', marginTop:6, border:'1px solid #D8DEE9', borderRadius:8, padding:'9px 10px', color:'#172033', background:'#FFFFFF', fontSize:13 }}><option value="ACTIVE">Active</option><option value="ON_HOLD">On hold</option><option value="COMPLETED">Completed</option></select></label>
             <label style={{ display:'block', color:'#475467', fontSize:12, fontWeight:700 }}>Target date<input type="date" min={activeProject.startDate} value={targetDateDraft} onChange={event => setTargetDateDraft(event.target.value)} style={{ display:'block', width:'100%', marginTop:6, border:'1px solid #D8DEE9', borderRadius:8, padding:'9px 10px', color:'#172033', background:'#FFFFFF', fontSize:13 }} /></label>
             <div style={{ marginTop:18 }}><div style={{ color:'#475467', fontSize:12, fontWeight:700, marginBottom:8 }}>Working days</div><div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>{[['อา.', 0], ['จ.', 1], ['อ.', 2], ['พ.', 3], ['พฤ.', 4], ['ศ.', 5], ['ส.', 6]].map(([label, day]) => <button key={String(day)} type="button" onClick={() => toggleWorkingDay(Number(day))} style={{ border:`1px solid ${workingDaysDraft.includes(Number(day)) ? '#A5B4FC' : '#D8DEE9'}`, borderRadius:8, padding:'7px 11px', cursor:'pointer', background:workingDaysDraft.includes(Number(day)) ? '#EEF2FF' : '#FFFFFF', color:workingDaysDraft.includes(Number(day)) ? '#4338CA' : '#667085', fontSize:12, fontWeight:700 }}>{label}</button>)}</div><p style={{ margin:'8px 0 0', color:'#98A2B3', fontSize:11 }}>ตัดวันหยุดบริษัทและวันหยุดเฉพาะ Project ออกจากการคำนวณวันทำการอัตโนมัติ</p></div>
             <div style={{ marginTop:20, paddingTop:18, borderTop:'1px solid #EEF2F7' }}><div style={{ color:'#475467', fontSize:12, fontWeight:700 }}>Project holidays</div><div style={{ display:'grid', gridTemplateColumns:'150px 1fr auto', gap:8, marginTop:9 }}><input type="date" value={holidayDateDraft} onChange={event => setHolidayDateDraft(event.target.value)} style={{ border:'1px solid #D8DEE9', borderRadius:8, padding:'8px', fontSize:12 }} /><input value={holidayNameDraft} onChange={event => setHolidayNameDraft(event.target.value)} placeholder="เช่น Change freeze" style={{ border:'1px solid #D8DEE9', borderRadius:8, padding:'8px', fontSize:12 }} /><button type="button" onClick={addProjectHoliday} style={{ border:'none', borderRadius:8, padding:'8px 11px', cursor:'pointer', background:'#EEF2FF', color:'#4338CA', fontSize:12, fontWeight:800 }}>+ Add</button></div>
