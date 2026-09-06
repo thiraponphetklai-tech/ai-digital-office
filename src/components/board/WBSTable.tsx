@@ -198,6 +198,7 @@ export function WBSTable() {
                 const isEditPlanning = editing?.id === task.id && editing.field === 'planning'
                 const owner = resources.find(resource => resource.id === task.ownerId)
                 const ownerName = owner?.name ?? task.ownerId
+                const ownerNames = [task.ownerId, ...(task.assigneeIds ?? []).filter(id => id !== task.ownerId)].map(id => resources.find(resource => resource.id === id)?.name ?? id)
 
                 return (
                   <React.Fragment key={task.id}>
@@ -278,7 +279,7 @@ export function WBSTable() {
 
                       {/* Owner */}
                       <td style={{ padding: '10px 8px', width: 80 }}>
-                        {isEditOwner ? <input autoFocus value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => commitEdit(task)} onKeyDown={e => { if (e.key === 'Enter') commitEdit(task); if (e.key === 'Escape') setEditing(null) }} style={{ width:'100%', fontSize:11, border:'1px solid #C7D7FF', borderRadius:6, padding:'4px 5px', outline:'none' }} /> : <div onClick={() => startEdit(task.id, 'ownerId', task.ownerId)} title="Click to edit owner" style={{ display: 'flex', alignItems: 'center', gap: 6, cursor:'pointer' }}><div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#335CFF,#6D5CE7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#fff', flexShrink: 0 }}>{ownerName.slice(0, 2).toUpperCase()}</div><span style={{ fontSize: 11, color: '#667085' }}>{ownerName}</span></div>}
+                        {isEditOwner ? <input autoFocus value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => commitEdit(task)} onKeyDown={e => { if (e.key === 'Enter') commitEdit(task); if (e.key === 'Escape') setEditing(null) }} style={{ width:'100%', fontSize:11, border:'1px solid #C7D7FF', borderRadius:6, padding:'4px 5px', outline:'none' }} /> : <div onClick={() => startEdit(task.id, 'ownerId', task.ownerId)} title="Click to edit owners in task detail" style={{ display: 'flex', alignItems: 'center', gap: 6, cursor:'pointer' }}><div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#335CFF,#6D5CE7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#fff', flexShrink: 0 }}>{ownerName.slice(0, 2).toUpperCase()}</div><span style={{ fontSize: 11, color: '#667085', lineHeight:1.35 }}>{ownerNames.join(', ')}</span></div>}
                       </td>
 
                       {/* Maker */}

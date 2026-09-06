@@ -24,7 +24,7 @@ export function buildWbsTaskLines(tasks: Task[], ownerNames: Record<string, stri
     const description = task.description?.trim() ? shorten(task.description.trim(), 180) : 'No description'
     const item = [
       `• ${shorten(task.title, 120)}`,
-      `  Status: ${statusLabels[task.status]} | Progress: ${Math.round(task.progress)}% | Owner: ${ownerNames[task.ownerId] ?? task.ownerId}`,
+      `  Status: ${statusLabels[task.status]} | Progress: ${Math.round(task.progress)}% | Owner: ${[task.ownerId, ...(task.assigneeIds ?? []).filter(id => id !== task.ownerId)].map(id => ownerNames[id] ?? id).join(', ')}`,
       `  Description: ${description}`,
     ].join('\n')
     if (used + item.length + 1 > characterBudget) break
