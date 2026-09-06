@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { mapTask } from '@/lib/databaseMappers'
+import { canAccessProject, getCurrentUser } from '@/lib/localAuth'
 
 const include = { assignees: true, dependencies: true } as const
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params
+  const user = await getCurrentUser()
+  if (!user || !await canAccessProject(user, projectId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const tasks = await db.task.findMany({ where: { projectId }, include, orderBy: [{ dueDate: 'asc' }, { title: 'asc' }] })
   return NextResponse.json(tasks.map(mapTask))
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params
+  const user = await getCurrentUser()
+  if (!user || !await canAccessProject(user, projectId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const body = await request.json()
   if (!body.id || !body.title || !body.ownerId || !body.teamId) return NextResponse.json({ error: 'id, title, ownerId, and teamId are required' }, { status: 400 })
   const task = await db.task.create({

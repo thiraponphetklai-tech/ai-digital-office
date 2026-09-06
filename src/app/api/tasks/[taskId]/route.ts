@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { mapTask } from '@/lib/databaseMappers'
-import { getCurrentUser } from '@/lib/localAuth'
+import { canAccessProject, getCurrentUser } from '@/lib/localAuth'
 
 const include = { assignees: true, dependencies: true } as const
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ taskId: string }> }) {
   const { taskId } = await params
+  const user = await getCurrentUser()
+  const existingTask = await db.task.findUnique({ where: { id: taskId }, select: { projectId: true } })
+  if (!user || !existingTask || !await canAccessProject(user, existingTask.projectId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const body = await request.json()
   const task = await db.$transaction(async (transaction: Prisma.TransactionClient) => {
     if (Array.isArray(body.assigneeIds)) await transaction.taskAssignee.deleteMany({ where: { taskId } })
@@ -29,8 +32,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ taskId: string }> }) {
-  if (!await getCurrentUser()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { taskId } = await params
+  const user = await getCurrentUser()
+  const existingTask = await db.task.findUnique({ where: { id: taskId }, select: { projectId: true } })
+  if (!user || !existingTask || !await canAccessProject(user, existingTask.projectId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const task = await db.task.delete({ where: { id: taskId }, select: { id: true } }).catch(() => null)
   return task ? NextResponse.json({ deleted: true, taskId: task.id }) : NextResponse.json({ error: 'Task not found or delete failed' }, { status: 404 })
 }
