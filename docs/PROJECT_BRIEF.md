@@ -114,3 +114,36 @@ React Three Fiber rendering
   advisory AI guardrails as the application and must not mutate records.
 - Add allow-listing, rate limits, short reply limits, audit logs, and safe
   fallback responses for unlinked users, unauthorized projects, or AI errors.
+
+## Deferred LINE notification requirements
+
+> Do not create the scheduler or activate these notifications until explicitly
+> requested. Recipients and credentials remain in encrypted configuration or
+> Azure secrets, never in Git.
+
+1. **New task assignment**
+   - When an owner is assigned to a task, notify the configured LINE group.
+   - Mention the owner's LINE display/mention name when it has been securely
+     mapped to the application user/resource.
+   - Write in concise, natural Thai in a manager-to-team tone: task name,
+     expected action, due date when available, and a polite acknowledgement
+     request. Do not expose internal IDs.
+
+2. **Stale progress follow-up**
+   - When a task has not received a progress update beyond its configured
+     follow-up date/threshold, notify the configured LINE group and mention
+     the task owner.
+   - Use a helpful manager follow-up tone, state the last known progress and
+     requested update, and avoid claiming that the owner was contacted or that
+     progress changed unless the outbound LINE delivery was confirmed.
+   - Define the authoritative follow-up date and deduplication/cooldown before
+     implementation to prevent repeated reminders.
+
+3. **Weekly group summary**
+   - Send the existing WBS task-based project summary to the configured LINE
+     group every **Monday at 07:00 Asia/Bangkok**.
+   - For an Azure scheduler that uses UTC, this is cron expression
+     `0 0 * * 1` (Monday 00:00 UTC).
+   - Use a protected endpoint with `CRON_SECRET`, sequential AI requests,
+     delivery logging, retry/fallback behavior, and a manual test run before
+     enabling the schedule.
