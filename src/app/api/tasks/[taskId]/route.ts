@@ -3,13 +3,14 @@ import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { mapTask } from '@/lib/databaseMappers'
 import { canAccessProject, getCurrentUser } from '@/lib/localAuth'
+import { sendTaskAssignmentNotification } from '@/lib/lineTaskNotifications'
 
 const include = { assignees: true, dependencies: true } as const
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ taskId: string }> }) {
   const { taskId } = await params
   const user = await getCurrentUser()
-  const existingTask = await db.task.findUnique({ where: { id: taskId }, select: { projectId: true } })
+  const existingTask = await db.task.findUnique({ where: { id: taskId }, select: { projectId: true, title: true, dueDate: true, ownerId: true, assignees: { select: { resourceId: true } }, project: { select: { name: true } } } })
   if (!user || !existingTask || !await canAccessProject(user, existingTask.projectId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const body = await request.json()
   const task = await db.$transaction(async (transaction: Prisma.TransactionClient) => {
@@ -28,7 +29,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }, include,
     })
   }).catch(() => null)
-  return task ? NextResponse.json(mapTask(task)) : NextResponse.json({ error: 'Task not found or update failed' }, { status: 404 })
+  if (!task) return NextResponse.json({ error: 'Task not found or update failed' }, { status: 404 })
+
+  const previousAssignees = new Set([existingTask.ownerId, ...existingTask.assignees.map((assignee: { resourceId: string }) => assignee.resourceId)])
+  const newAssigneeIds = [...new Set([task.ownerId, ...task.assignees.map((assignee: { resourceId: string }) => assignee.resourceId)])].filter(id => !previousAssignees.has(id))
+  if (newAssigneeIds.length) {
+    const resources = await db.resource.findMany({ where: { id: { in: newAssigneeIds }, active: true }, select: { name: true } })
+    const delivered = await sendTaskAssignmentNotification({ projectName: existingTask.project.name, taskTitle: task.title, dueDate: task.dueDate, ownerNames: resources.map((resource: { name: string }) => resource.name) })
+    if (delivered) await db.projectEvent.create({ data: { projectId: task.projectId, taskId: task.id, type: 'line.task_assignment_sent', message: `LINE assignment notice sent for ${task.title}`, color: '#06C755', payload: { assigneeCount: resources.length } } })
+  }
+  return NextResponse.json(mapTask(task))
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ taskId: string }> }) {
