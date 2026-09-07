@@ -30,9 +30,12 @@ LINE_CONFIG_ENCRYPTION_KEY=
 FOUNDRY_OPENAI_ENDPOINT=
 FOUNDRY_MODEL_DEPLOYMENT=
 AZURE_CLIENT_ID=
+APP_BASE_URL=
 ```
 
 `FOUNDRY_*` and `AZURE_CLIENT_ID` are required only when testing the AI chat.
+`APP_BASE_URL` is the public application URL included in LINE task assignment
+notifications.
 Use a credential supported by `DefaultAzureCredential`; production uses managed
 identity. `LINE_CONFIG_ENCRYPTION_KEY` must be a base64-encoded 32-byte key
 when System Admins manage LINE settings through the application. Never commit

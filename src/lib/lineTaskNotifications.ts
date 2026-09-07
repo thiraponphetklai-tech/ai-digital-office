@@ -5,6 +5,7 @@ type AssignmentNotification = {
   taskTitle: string
   dueDate: Date | null
   ownerNames: string[]
+  appUrl?: string
 }
 
 /** Sends only an assignment notice. Callers must persist the task first. */
@@ -17,10 +18,11 @@ export async function sendTaskAssignmentNotification(notification: AssignmentNot
     : null
   const text = [
     `📌 มอบหมายงานใหม่ — ${notification.projectName}`,
-    `คุณ${notification.ownerNames.join(' และคุณ')} รบกวนรับงาน “${notification.taskTitle}” ด้วยครับ`,
+    `คุณ${notification.ownerNames.join(' คุณ')} คุณได้รับ assign งาน “${notification.taskTitle}” จากหัวหน้าทีมของคุณ`,
     dueDate ? `กำหนดส่ง: ${dueDate}` : 'ยังไม่ได้กำหนดวันส่ง',
     'หากมีข้อจำกัดหรือประเด็นที่ต้องช่วยแจ้งในระบบได้เลยครับ',
-  ].join('\n')
+    notification.appUrl ? `🔗 เข้าระบบ: ${notification.appUrl}` : null,
+  ].filter((line): line is string => Boolean(line)).join('\n')
 
   try {
     const response = await fetch('https://api.line.me/v2/bot/message/push', {
