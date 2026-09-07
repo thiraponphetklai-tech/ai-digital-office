@@ -1,8 +1,8 @@
 'use client'
 
-import { FormEvent, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { useProjectStore, useResourceStore, useTaskStore } from '@/store'
-import type { Task, TaskPriority, TaskStatus } from '@/types'
+import type { Resource, Task, TaskPriority, TaskStatus } from '@/types'
 
 interface TaskCreateDialogProps {
   projectId: string
@@ -14,18 +14,29 @@ export function TaskCreateDialog({ projectId, initialStatus, onClose }: TaskCrea
   const addTask = useTaskStore(state => state.addTask)
   const resources = useResourceStore(state => state.resources)
   const project = useProjectStore(state => state.projects.find(item => item.id === projectId))
-  const availableResources = useMemo(
+  const localResources = useMemo(
     () => resources.filter(resource => resource.active && (project?.resourceIds?.includes(resource.id) ?? true)),
     [project?.resourceIds, resources],
   )
+  const [availableResources, setAvailableResources] = useState<Resource[]>(localResources)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [ownerId, setOwnerId] = useState(availableResources[0]?.id ?? '')
+  const [ownerId, setOwnerId] = useState(localResources[0]?.id ?? '')
   const [teamId, setTeamId] = useState('general')
   const [priority, setPriority] = useState<TaskPriority>('MEDIUM')
   const [dueDate, setDueDate] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    void fetch(`/api/projects/${encodeURIComponent(projectId)}/resources`).then(response => response.ok ? response.json() : null).then((items: Resource[] | null) => {
+      if (cancelled || !Array.isArray(items)) return
+      setAvailableResources(items)
+      setOwnerId(current => items.some(resource => resource.id === current) ? current : (items[0]?.id ?? ''))
+    })
+    return () => { cancelled = true }
+  }, [projectId])
 
   async function createTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
