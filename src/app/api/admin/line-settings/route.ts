@@ -16,14 +16,15 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   if (!await requireSystemAdmin()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const body = await request.json().catch(() => null) as { channelAccessToken?: unknown; recipientId?: unknown } | null
+  const body = await request.json().catch(() => null) as { channelAccessToken?: unknown; channelSecret?: unknown; recipientId?: unknown } | null
   const channelAccessToken = typeof body?.channelAccessToken === 'string' ? body.channelAccessToken.trim() : undefined
+  const channelSecret = typeof body?.channelSecret === 'string' ? body.channelSecret.trim() : undefined
   const recipientId = typeof body?.recipientId === 'string' ? body.recipientId.trim() : undefined
-  if ((!channelAccessToken && !recipientId) || (channelAccessToken !== undefined && channelAccessToken.length < 20) || (recipientId !== undefined && recipientId.length < 4)) {
-    return NextResponse.json({ error: 'Provide a valid channel access token or recipient ID.' }, { status: 400 })
+  if ((!channelAccessToken && !channelSecret && !recipientId) || (channelAccessToken !== undefined && channelAccessToken.length < 20) || (channelSecret !== undefined && channelSecret.length < 16) || (recipientId !== undefined && recipientId.length < 4)) {
+    return NextResponse.json({ error: 'Provide a valid channel access token, channel secret, or recipient ID.' }, { status: 400 })
   }
   try {
-    await updateLineConfig({ channelAccessToken: channelAccessToken || undefined, recipientId: recipientId || undefined })
+    await updateLineConfig({ channelAccessToken: channelAccessToken || undefined, channelSecret: channelSecret || undefined, recipientId: recipientId || undefined })
     return NextResponse.json(await getLineConfigStatus())
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to save LINE configuration.' }, { status: 503 })

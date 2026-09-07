@@ -42,10 +42,16 @@ export async function getLineChannelAccessToken() {
   return stored?.channelAccessTokenEncrypted ? decrypt(stored.channelAccessTokenEncrypted) : process.env.LINE_CHANNEL_ACCESS_TOKEN ?? null
 }
 
+export async function getLineChannelSecret() {
+  const stored = await getStoredConfig()
+  return stored?.channelSecretEncrypted ? decrypt(stored.channelSecretEncrypted) : process.env.LINE_CHANNEL_SECRET ?? null
+}
+
 export async function verifyLineWebhookSignature(rawBody: string, signature: string | null) {
-  const token = await getLineChannelAccessToken()
-  if (!token || !signature) return false
-  const expected = createHmac('sha256', token).update(rawBody).digest('base64')
+  // LINE signs webhook payloads with the Channel secret, not the access token.
+  const channelSecret = await getLineChannelSecret()
+  if (!channelSecret || !signature) return false
+  const expected = createHmac('sha256', channelSecret).update(rawBody).digest('base64')
   const actual = Buffer.from(signature)
   const expectedBuffer = Buffer.from(expected)
   return actual.length === expectedBuffer.length && timingSafeEqual(actual, expectedBuffer)
@@ -111,15 +117,16 @@ export async function getLineConfigStatus(): Promise<LineConfigStatus> {
     : { configured: false, recipientIdMasked: null, source: null, updatedAt: null }
 }
 
-export async function updateLineConfig(values: { channelAccessToken?: string; recipientId?: string }) {
+export async function updateLineConfig(values: { channelAccessToken?: string; channelSecret?: string; recipientId?: string }) {
   const existing = await getStoredConfig()
   const token = values.channelAccessToken ?? (existing?.channelAccessTokenEncrypted ? decrypt(existing.channelAccessTokenEncrypted) : process.env.LINE_CHANNEL_ACCESS_TOKEN)
+  const channelSecret = values.channelSecret ?? (existing?.channelSecretEncrypted ? decrypt(existing.channelSecretEncrypted) : process.env.LINE_CHANNEL_SECRET)
   const recipientId = values.recipientId ?? (existing?.recipientIdEncrypted ? decrypt(existing.recipientIdEncrypted) : process.env.LINE_DAILY_SUMMARY_RECIPIENT_ID)
-  if (!token || !recipientId) throw new Error('Both a channel access token and recipient ID are required for the first save.')
+  if (!token) throw new Error('A channel access token is required for the first save.')
 
   await db.lineIntegrationConfig.upsert({
     where: { id: CONFIG_ID },
-    create: { id: CONFIG_ID, channelAccessTokenEncrypted: encrypt(token), recipientIdEncrypted: encrypt(recipientId) },
-    update: { channelAccessTokenEncrypted: encrypt(token), recipientIdEncrypted: encrypt(recipientId) },
+    create: { id: CONFIG_ID, channelAccessTokenEncrypted: encrypt(token), channelSecretEncrypted: channelSecret ? encrypt(channelSecret) : null, recipientIdEncrypted: recipientId ? encrypt(recipientId) : null },
+    update: { channelAccessTokenEncrypted: encrypt(token), ...(channelSecret ? { channelSecretEncrypted: encrypt(channelSecret) } : {}), ...(recipientId ? { recipientIdEncrypted: encrypt(recipientId) } : {}) },
   })
 }

@@ -286,6 +286,7 @@ model ProjectEvent {
 model LineIntegrationConfig {
   id                          String   @id @default("default")
   channelAccessTokenEncrypted String?
+  channelSecretEncrypted      String?
   recipientIdEncrypted        String?
   selectedGroupId             String?
   createdAt                   DateTime @default(now())
