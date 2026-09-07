@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { mapTask } from '@/lib/databaseMappers'
 import { canAccessProject, getCurrentUser } from '@/lib/localAuth'
+import { sendTaskAssignmentNotification } from '@/lib/lineTaskNotifications'
 
 const include = { assignees: true, dependencies: true } as const
 
@@ -29,5 +30,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       assignees: body.assigneeIds?.length ? { create: body.assigneeIds.map((resourceId: string) => ({ resourceId })) } : undefined,
     }, include,
   })
+  const assigneeIds = [...new Set([task.ownerId, ...task.assignees.map((assignee: { resourceId: string }) => assignee.resourceId)])]
+  const [project, resources] = await Promise.all([
+    db.project.findUnique({ where: { id: projectId }, select: { name: true } }),
+    db.resource.findMany({ where: { id: { in: assigneeIds }, active: true }, select: { name: true } }),
+  ])
+  const delivered = await sendTaskAssignmentNotification({ projectName: project?.name ?? 'Digital Office', taskTitle: task.title, dueDate: task.dueDate, ownerNames: resources.map((resource: { name: string }) => resource.name), appUrl: process.env.APP_BASE_URL?.replace(/\/$/, '') })
+  if (delivered) await db.projectEvent.create({ data: { projectId, taskId: task.id, type: 'line.task_assignment_sent', message: `LINE assignment notice sent for ${task.title}`, color: '#06C755', payload: { assigneeCount: resources.length } } })
   return NextResponse.json(mapTask(task), { status: 201 })
 }
