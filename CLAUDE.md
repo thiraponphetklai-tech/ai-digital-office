@@ -37,6 +37,10 @@ implemented system and must remain consistent with it.
 Foundry through managed identity. It must not claim to modify data, create
 records, or send messages.
 
+`POST /api/ai/project-draft` generates a bounded, structured project draft.
+It records a redacted audit prompt and draft, and no records are created until
+the authorized user confirms through `POST /api/projects`.
+
 LINE outbound reporting routes read PostgreSQL project data:
 
 | Route | Purpose | Access |
@@ -61,7 +65,8 @@ signature validation, and reply handling are not implemented.
 
 ## Known gaps
 
-- Server-side role authorization is not yet uniformly enforced.
+- Server-side role authorization is not yet uniformly enforced outside
+  project/task/membership and AI-project creation routes.
 - No LINE webhook signature validation, reply flow, or command parser.
 - No automated test suite.
 - Mock agent and mock data remain for visual/demo flows; they are not the

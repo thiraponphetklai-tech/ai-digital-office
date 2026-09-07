@@ -23,6 +23,14 @@ server source of truth.
 - Azure AI Foundry-backed chat that uses project context and is advisory only.
 - System Admin-only LINE integration settings with encrypted PostgreSQL storage;
   the UI exposes configuration status and a masked recipient ID only.
+- Project membership visibility: creators receive `PROJECT_ADMIN` membership,
+  Standard Users see only granted projects, and System Admins retain
+  cross-project access.
+- WBS primary owners plus additional assignees, shown by display name in WBS
+  and outbound LINE reports.
+- AI-assisted project generation: an editable JSON draft is explicitly
+  confirmed before a transaction creates the project, tasks, membership, and
+  audit record.
 - 3D office, event bus, visual-state mapper, and mock agent experience for
   presentation and interaction flows.
 
@@ -32,8 +40,8 @@ server source of truth.
 | --- | --- |
 | Database | PostgreSQL is the source of truth. |
 | Authentication | Local username/password session flow is implemented. |
-| Authorization | Not every API route enforces server-side role authorization yet. |
-| AI | Azure AI Foundry chat is implemented; it does not mutate records. |
+| Authorization | Project, task, project-membership, and AI-project creation routes enforce server-side session/access checks; remaining route coverage is tracked below. |
+| AI | Azure AI Foundry chat is advisory. AI project drafts are non-mutating until an authorized user explicitly confirms them. |
 | LINE webhook | Health/logging endpoint only; no signature validation or command processing. |
 | Scheduled reports | Protected endpoints exist; the scheduler is managed outside this repository. |
 | Automated tests | Not currently implemented. |
@@ -61,47 +69,44 @@ React Three Fiber rendering
 
 ## Planned work
 
-- Server-side authorization for all relevant APIs.
 - LINE webhook signature validation, reply flow, and command parser.
 - Automated tests and deployment health checks.
-- AI-assisted actions only with explicit confirmation and audit history.
+- Complete server-side authorization coverage for resource, LINE, and AI-context APIs.
 
 ## Prioritized feature backlog
 
-### 1. Project visibility by permission
+### 1. Project visibility by permission — Implemented
 
-- Users should see only projects for which they have an explicit membership or
+- Users see only projects for which they have an explicit membership or
   assigned access when entering the Project Hub.
 - The creator is automatically granted access to a newly created project;
   `STANDARD_USER` may create projects and initially sees only projects they
   created or were explicitly granted access to.
-- Enforce the same filter server-side for project, task, resource, LINE, and
-  AI-context endpoints; hiding a project in the UI is not authorization.
-- System Administrators retain cross-project access. Define the access model
-  and default-deny behavior before migration/backfill of existing memberships.
+- Project/task API filtering is server-side. Extending the same default-deny
+  rule to resource, LINE, and AI-context endpoints remains open.
 
-### 2. Multiple WBS owners
+### 2. Multiple WBS owners — Implemented
 
-- Allow a WBS task to have multiple accountable contributors through the
+- WBS tasks allow multiple accountable contributors through the
   existing `TaskAssignee` relation, while retaining `ownerId` as its primary
   owner for compatibility.
-- Replace free-text owner editing with a resource picker that supports primary
+- The resource picker supports a primary
   owner plus additional assignees. Show names, not resource IDs, throughout
   WBS, dashboards, and LINE reports.
-- Decide reporting semantics for multiple owners (for example, show primary
-  owner first followed by additional owners) and preserve workload allocation.
+- Reports show the primary owner followed by additional owners. Workload
+  allocation remains an area for future refinement.
 
-### 3. AI-generated project with example tasks
+### 3. AI-generated project with example tasks — Implemented
 
-- Provide a Project Hub flow that asks for project goal, scope, target date,
+- Project Hub provides a flow that asks for project goal, scope, target date,
   and optional team/resources, then generates a project draft and example WBS
   tasks using Azure AI Foundry.
-- The AI result must be a preview only. A user explicitly confirms before any
+- The AI result is a preview only. A user explicitly confirms before any
   project/tasks are persisted, and generated content must be editable first.
 - `STANDARD_USER` may confirm and create their own generated project. The
   creation transaction must also create their project membership so they can
   see the new project immediately.
-- Guardrails: use supplied inputs only, do not invent completed work or
+- Guardrails use supplied inputs only, do not invent completed work or
   commitments, validate task schema/dates/owners server-side, and keep an
   audit record of the confirmed creation.
 

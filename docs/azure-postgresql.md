@@ -41,8 +41,12 @@ Run `npm run db:seed` only when initializing an approved environment. It is not
 a routine production deployment command because it may alter seeded records.
 
 The repository Dockerfile contains a dedicated `migrator` stage for the
-one-off Azure Container Apps migration workflow; the web runtime image stays
-minimal and does not carry the Prisma CLI.
+one-off Azure Container Apps migration workflow; build it explicitly with
+Docker's `--target migrator`. The web runtime image stays minimal and does not
+carry the Prisma CLI. The current production database predates Prisma
+migration history, so the approved Container Apps job uses the generated
+Prisma binary with `prisma db push`; do not switch it to `migrate deploy`
+until the database has been formally baselined.
 
 ## Recovery and TLS
 
