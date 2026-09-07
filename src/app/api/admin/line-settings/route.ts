@@ -7,7 +7,8 @@ export const runtime = 'nodejs'
 export async function GET() {
   if (!await requireSystemAdmin()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   try {
-    return NextResponse.json({ ...(await getLineConfigStatus()), groups: await getLineGroups() })
+    const appUrl = process.env.APP_BASE_URL?.replace(/\/$/, '')
+    return NextResponse.json({ ...(await getLineConfigStatus()), groups: await getLineGroups(), webhookUrl: appUrl ? `${appUrl}/api/line/webhook` : null })
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to read LINE configuration.' }, { status: 503 })
   }
