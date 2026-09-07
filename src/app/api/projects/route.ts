@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { Prisma } from '@prisma/client'
+import type { Prisma, TaskPriority } from '@prisma/client'
 import { db } from '@/lib/db'
 import { mapProject } from '@/lib/databaseMappers'
 import { getCurrentUser } from '@/lib/localAuth'
@@ -32,14 +32,14 @@ export async function POST(request: NextRequest) {
   const projectName = body.name.trim()
   const projectStartDate = body.startDate
   const projectTargetDate = body.targetDate
-  const validPriorities = new Set(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'])
+  const validPriorities = new Set<TaskPriority>(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'])
   const tasks = Array.isArray(body.tasks) ? body.tasks.slice(0, 12).filter((task: unknown): task is Record<string, unknown> => typeof task === 'object' && task !== null).map(task => ({
     id: typeof task.id === 'string' ? task.id : `task-${crypto.randomUUID()}`,
     title: typeof task.title === 'string' ? task.title.trim().slice(0, 180) : '',
     description: typeof task.description === 'string' ? task.description.trim().slice(0, 1000) : null,
     ownerId: typeof task.ownerId === 'string' ? task.ownerId : '',
     dueDate: typeof task.dueDate === 'string' ? task.dueDate : '',
-    priority: typeof task.priority === 'string' && validPriorities.has(task.priority) ? task.priority : 'MEDIUM',
+    priority: typeof task.priority === 'string' && validPriorities.has(task.priority as TaskPriority) ? task.priority as TaskPriority : 'MEDIUM' as TaskPriority,
   })).filter(task => task.title && task.ownerId && isValidDate(task.dueDate) && task.dueDate <= projectTargetDate) : []
   if (Array.isArray(body.tasks) && !tasks.length) return NextResponse.json({ error: 'At least one valid task is required.' }, { status: 400 })
   const ownerIds = [...new Set(tasks.map(task => task.ownerId))]
