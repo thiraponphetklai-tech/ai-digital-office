@@ -131,6 +131,7 @@ model User {
   resource                   Resource?  @relation(fields: [resourceId], references: [id], onDelete: SetNull)
   sessions                   UserSession[]
   projectMemberships         ProjectUserMember[]
+  aiProjectDraftAudits       AiProjectDraftAudit[]
 }
 
 model UserSession {
@@ -288,4 +289,18 @@ model LineIntegrationConfig {
   recipientIdEncrypted        String?
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
+}
+
+model AiProjectDraftAudit {
+  id                 String   @id @default(cuid())
+  userId             String
+  promptRedacted     String
+  draft              Json
+  confirmedDraft     Json?
+  confirmedProjectId String?
+  createdAt          DateTime @default(now())
+  confirmedAt        DateTime?
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

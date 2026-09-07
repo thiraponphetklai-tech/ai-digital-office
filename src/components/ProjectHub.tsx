@@ -2,8 +2,9 @@
 
 import { FormEvent, useState } from 'react'
 import { useProjectStore, useTaskStore, usePrefsStore } from '@/store'
-import type { Project } from '@/types'
+import type { Project, Task, TaskPriority } from '@/types'
 import { CsvProjectImporter } from '@/components/CsvProjectImporter'
+import { AiProjectGeneratorDialog } from '@/components/AiProjectGeneratorDialog'
 
 interface ProjectHubProps {
   onOpenWorkspace: () => void
@@ -18,10 +19,11 @@ const addMonths = (months: number) => {
 
 export function ProjectHub({ onOpenWorkspace }: ProjectHubProps) {
   const { projects, addProject } = useProjectStore()
-  const { tasks } = useTaskStore()
+  const { tasks, addTask } = useTaskStore()
   const { prefs, setActiveProject } = usePrefsStore()
   const [showSetup, setShowSetup] = useState(false)
   const [showCsvImporter, setShowCsvImporter] = useState(false)
+  const [showAiGenerator, setShowAiGenerator] = useState(false)
   const [query, setQuery] = useState('')
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
@@ -37,6 +39,15 @@ export function ProjectHub({ onOpenWorkspace }: ProjectHubProps) {
 
   function openProject(projectId: string) {
     setActiveProject(projectId)
+    onOpenWorkspace()
+  }
+
+  function aiProjectCreated(project: Project, draftTasks: Array<{ id: string; title: string; description: string; ownerId: string; dueDate: string; priority: TaskPriority }>) {
+    const updatedAt = new Date().toISOString()
+    addProject(project)
+    draftTasks.forEach(task => addTask({ id: task.id, projectId: project.id, title: task.title, description: task.description || undefined, ownerId: task.ownerId, assigneeIds: [task.ownerId], teamId: 'general', status: 'TODO', priority: task.priority, progress: 0, riskLevel: 'NONE', dueDate: task.dueDate, lastUpdatedAt: updatedAt }))
+    setActiveProject(project.id)
+    setShowAiGenerator(false)
     onOpenWorkspace()
   }
 
@@ -85,7 +96,7 @@ export function ProjectHub({ onOpenWorkspace }: ProjectHubProps) {
             <div style={{ fontSize: 11, color: '#667085' }}>AI Project Management Platform</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}><button onClick={() => setShowCsvImporter(true)} style={secondaryButtonStyle}>⇧ Import CSV Plan</button><button onClick={() => setShowSetup(true)} style={primaryButtonStyle}>+ Create Project</button></div>
+        <div style={{ display: 'flex', gap: 8 }}><button onClick={() => setShowCsvImporter(true)} style={secondaryButtonStyle}>⇧ Import CSV Plan</button><button onClick={() => setShowAiGenerator(true)} style={secondaryButtonStyle}>✨ Generate with AI</button><button onClick={() => setShowSetup(true)} style={primaryButtonStyle}>+ Create Project</button></div>
       </header>
 
       <section style={{ maxWidth: 1100, margin: '0 auto' }}>
@@ -126,6 +137,7 @@ export function ProjectHub({ onOpenWorkspace }: ProjectHubProps) {
       </section>
 
       {showCsvImporter && <CsvProjectImporter onClose={() => setShowCsvImporter(false)} onImported={() => { setShowCsvImporter(false); onOpenWorkspace() }} />}
+      {showAiGenerator && <AiProjectGeneratorDialog onClose={() => setShowAiGenerator(false)} onCreated={aiProjectCreated} />}
 
       {showSetup && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(15,23,42,.38)', display: 'grid', placeItems: 'center', padding: 20 }}>
