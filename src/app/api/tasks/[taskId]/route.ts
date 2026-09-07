@@ -36,7 +36,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (newAssigneeIds.length) {
     const resources = await db.resource.findMany({ where: { id: { in: newAssigneeIds }, active: true }, select: { name: true } })
     const appUrl = process.env.APP_BASE_URL?.replace(/\/$/, '')
-    const delivered = await sendTaskAssignmentNotification({ projectName: existingTask.project.name, taskTitle: task.title, dueDate: task.dueDate, ownerNames: resources.map((resource: { name: string }) => resource.name), appUrl })
+    const delivered = await sendTaskAssignmentNotification({ projectId: task.projectId, projectName: existingTask.project.name, taskTitle: task.title, dueDate: task.dueDate, ownerNames: resources.map((resource: { name: string }) => resource.name), appUrl })
     if (delivered) await db.projectEvent.create({ data: { projectId: task.projectId, taskId: task.id, type: 'line.task_assignment_sent', message: `LINE assignment notice sent for ${task.title}`, color: '#06C755', payload: { assigneeCount: resources.length } } })
   }
   return NextResponse.json(mapTask(task))

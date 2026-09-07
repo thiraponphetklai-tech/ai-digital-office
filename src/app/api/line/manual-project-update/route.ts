@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   if (!projectData) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
   const { project, tasks, ownerNames } = projectData
 
-  const config = await getLineDeliveryConfig()
+  const config = await getLineDeliveryConfig(projectId)
   if (!config) {
     return NextResponse.json({ error: 'LINE configuration is not set.' }, { status: 500 })
   }

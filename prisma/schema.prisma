@@ -84,6 +84,9 @@ model Project {
   resources   ProjectResource[]
   events      ProjectEvent[]
   userMembers ProjectUserMember[]
+  lineRecipientGroupId String?
+  lineRecipientGroup   LineRecipientGroup? @relation(fields: [lineRecipientGroupId], references: [id], onDelete: SetNull)
+  @@index([lineRecipientGroupId])
 }
 
 model Resource {
@@ -300,6 +303,7 @@ model LineRecipientGroup {
   active               Boolean  @default(true)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+  projects             Project[]
 
   @@index([active, name])
 }

@@ -64,9 +64,14 @@ export async function discoverLineGroup(groupId: string) {
   return true
 }
 
-export async function getLineGroups(): Promise<LineGroupSummary[]> {
-  const [config, groups] = await Promise.all([getStoredConfig(), db.lineRecipientGroup.findMany({ orderBy: { name: 'asc' } })])
-  return groups.map((group: { id: string; name: string; recipientIdEncrypted: string; active: boolean }) => ({ id: group.id, name: group.name, recipientIdMasked: maskRecipientId(decrypt(group.recipientIdEncrypted)), active: group.active, selected: config?.selectedGroupId === group.id }))
+export async function getLineGroups(projectId?: string): Promise<LineGroupSummary[]> {
+  const [config, project, groups] = await Promise.all([
+    getStoredConfig(),
+    projectId ? db.project.findUnique({ where: { id: projectId }, select: { lineRecipientGroupId: true } }) : null,
+    db.lineRecipientGroup.findMany({ orderBy: { name: 'asc' } }),
+  ])
+  const selectedGroupId = project?.lineRecipientGroupId ?? config?.selectedGroupId
+  return groups.map((group: { id: string; name: string; recipientIdEncrypted: string; active: boolean }) => ({ id: group.id, name: group.name, recipientIdMasked: maskRecipientId(decrypt(group.recipientIdEncrypted)), active: group.active, selected: selectedGroupId === group.id }))
 }
 
 export async function addLineGroup(name: string, recipientId: string) {
@@ -75,10 +80,11 @@ export async function addLineGroup(name: string, recipientId: string) {
   return db.lineRecipientGroup.create({ data: { name, recipientIdEncrypted: encrypt(recipientId) } })
 }
 
-export async function selectLineGroup(groupId: string) {
+export async function selectLineGroup(projectId: string, groupId: string) {
   const group = await db.lineRecipientGroup.findFirst({ where: { id: groupId, active: true }, select: { id: true } })
   if (!group) throw new Error('Selected LINE group was not found.')
-  await db.lineIntegrationConfig.upsert({ where: { id: CONFIG_ID }, create: { id: CONFIG_ID, selectedGroupId: group.id }, update: { selectedGroupId: group.id } })
+  const project = await db.project.update({ where: { id: projectId }, data: { lineRecipientGroupId: group.id }, select: { id: true } }).catch(() => null)
+  if (!project) throw new Error('Project was not found.')
 }
 
 export async function deleteLineGroup(groupId: string) {
@@ -91,9 +97,11 @@ async function getStoredConfig() {
   return db.lineIntegrationConfig.findUnique({ where: { id: CONFIG_ID } })
 }
 
-export async function getLineDeliveryConfig(): Promise<LineDeliveryConfig | null> {
+export async function getLineDeliveryConfig(projectId?: string): Promise<LineDeliveryConfig | null> {
   const stored = await getStoredConfig()
-  const selectedGroup = stored?.selectedGroupId ? await db.lineRecipientGroup.findUnique({ where: { id: stored.selectedGroupId } }) : null
+  const project = projectId ? await db.project.findUnique({ where: { id: projectId }, select: { lineRecipientGroupId: true } }) : null
+  const selectedGroupId = project?.lineRecipientGroupId ?? stored?.selectedGroupId
+  const selectedGroup = selectedGroupId ? await db.lineRecipientGroup.findUnique({ where: { id: selectedGroupId } }) : null
   if (stored?.channelAccessTokenEncrypted && selectedGroup?.active) {
     return { token: decrypt(stored.channelAccessTokenEncrypted), recipientId: decrypt(selectedGroup.recipientIdEncrypted) }
   }
@@ -106,8 +114,14 @@ export async function getLineDeliveryConfig(): Promise<LineDeliveryConfig | null
   return token && recipientId ? { token, recipientId } : null
 }
 
-export async function getLineConfigStatus(): Promise<LineConfigStatus> {
-  const stored = await getStoredConfig()
+export async function getLineConfigStatus(projectId?: string): Promise<LineConfigStatus> {
+  const [stored, project] = await Promise.all([
+    getStoredConfig(),
+    projectId ? db.project.findUnique({ where: { id: projectId }, select: { lineRecipientGroup: { select: { active: true, recipientIdEncrypted: true } } } }) : null,
+  ])
+  if (stored?.channelAccessTokenEncrypted && project?.lineRecipientGroup?.active) {
+    return { configured: true, recipientIdMasked: maskRecipientId(decrypt(project.lineRecipientGroup.recipientIdEncrypted)), source: 'database', updatedAt: stored.updatedAt.toISOString() }
+  }
   if (stored?.channelAccessTokenEncrypted && stored.recipientIdEncrypted) {
     return { configured: true, recipientIdMasked: maskRecipientId(decrypt(stored.recipientIdEncrypted)), source: 'database', updatedAt: stored.updatedAt.toISOString() }
   }

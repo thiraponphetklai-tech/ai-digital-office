@@ -4,11 +4,12 @@ import { requireSystemAdmin } from '@/lib/localAuth'
 
 export const runtime = 'nodejs'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   if (!await requireSystemAdmin()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   try {
+    const projectId = new URL(request.url).searchParams.get('projectId') ?? undefined
     const appUrl = process.env.APP_BASE_URL?.replace(/\/$/, '')
-    return NextResponse.json({ ...(await getLineConfigStatus()), groups: await getLineGroups(), webhookUrl: appUrl ? `${appUrl}/api/line/webhook` : null })
+    return NextResponse.json({ ...(await getLineConfigStatus(projectId)), groups: await getLineGroups(projectId), webhookUrl: appUrl ? `${appUrl}/api/line/webhook` : null })
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to read LINE configuration.' }, { status: 503 })
   }
@@ -33,12 +34,12 @@ export async function PUT(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   if (!await requireSystemAdmin()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const body = await request.json().catch(() => null) as { name?: unknown; recipientId?: unknown; selectedGroupId?: unknown } | null
+  const body = await request.json().catch(() => null) as { name?: unknown; recipientId?: unknown; selectedGroupId?: unknown; projectId?: unknown } | null
   try {
-    if (typeof body?.selectedGroupId === 'string') await selectLineGroup(body.selectedGroupId)
+    if (typeof body?.selectedGroupId === 'string' && typeof body.projectId === 'string') await selectLineGroup(body.projectId, body.selectedGroupId)
     else if (typeof body?.name === 'string' && typeof body.recipientId === 'string' && body.name.trim().length > 0 && body.recipientId.trim().length >= 4) await addLineGroup(body.name.trim().slice(0, 80), body.recipientId.trim())
     else return NextResponse.json({ error: 'Provide a group name and ID, or select a group.' }, { status: 400 })
-    return NextResponse.json({ ...(await getLineConfigStatus()), groups: await getLineGroups() })
+    return NextResponse.json({ ...(await getLineConfigStatus(typeof body?.projectId === 'string' ? body.projectId : undefined)), groups: await getLineGroups(typeof body?.projectId === 'string' ? body.projectId : undefined) })
   } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to save LINE group.' }, { status: 400 }) }
 }
 

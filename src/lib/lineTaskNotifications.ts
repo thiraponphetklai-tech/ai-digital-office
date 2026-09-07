@@ -1,6 +1,7 @@
 import { getLineDeliveryConfig } from '@/lib/lineConfig'
 
 type AssignmentNotification = {
+  projectId: string
   projectName: string
   taskTitle: string
   dueDate: Date | null
@@ -10,7 +11,7 @@ type AssignmentNotification = {
 
 /** Sends only an assignment notice. Callers must persist the task first. */
 export async function sendTaskAssignmentNotification(notification: AssignmentNotification) {
-  const config = await getLineDeliveryConfig()
+  const config = await getLineDeliveryConfig(notification.projectId)
   if (!config || notification.ownerNames.length === 0) return false
 
   const dueDate = notification.dueDate

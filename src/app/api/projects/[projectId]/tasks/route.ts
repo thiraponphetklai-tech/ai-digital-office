@@ -35,7 +35,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     db.project.findUnique({ where: { id: projectId }, select: { name: true } }),
     db.resource.findMany({ where: { id: { in: assigneeIds }, active: true }, select: { name: true } }),
   ])
-  const delivered = await sendTaskAssignmentNotification({ projectName: project?.name ?? 'Digital Office', taskTitle: task.title, dueDate: task.dueDate, ownerNames: resources.map((resource: { name: string }) => resource.name), appUrl: process.env.APP_BASE_URL?.replace(/\/$/, '') })
+  const delivered = await sendTaskAssignmentNotification({ projectId, projectName: project?.name ?? 'Digital Office', taskTitle: task.title, dueDate: task.dueDate, ownerNames: resources.map((resource: { name: string }) => resource.name), appUrl: process.env.APP_BASE_URL?.replace(/\/$/, '') })
   if (delivered) await db.projectEvent.create({ data: { projectId, taskId: task.id, type: 'line.task_assignment_sent', message: `LINE assignment notice sent for ${task.title}`, color: '#06C755', payload: { assigneeCount: resources.length } } })
   return NextResponse.json(mapTask(task), { status: 201 })
 }
