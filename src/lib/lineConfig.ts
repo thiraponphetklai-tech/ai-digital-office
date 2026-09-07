@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, randomBytes } from 'crypto'
+import { createCipheriv, createDecipheriv, createHmac, randomBytes, timingSafeEqual } from 'crypto'
 import { db } from '@/lib/db'
 
 const CONFIG_ID = 'default'
@@ -6,6 +6,7 @@ const ALGORITHM = 'aes-256-gcm'
 
 type LineDeliveryConfig = { token: string; recipientId: string }
 type LineConfigStatus = { configured: boolean; recipientIdMasked: string | null; source: 'database' | 'environment' | null; updatedAt: string | null }
+export type LineGroupSummary = { id: string; name: string; recipientIdMasked: string; active: boolean; selected: boolean }
 
 function getEncryptionKey() {
   const encoded = process.env.LINE_CONFIG_ENCRYPTION_KEY
@@ -36,12 +37,60 @@ function maskRecipientId(value: string) {
   return `${value.slice(0, 3)}••••${value.slice(-3)}`
 }
 
+export async function getLineChannelAccessToken() {
+  const stored = await getStoredConfig()
+  return stored?.channelAccessTokenEncrypted ? decrypt(stored.channelAccessTokenEncrypted) : process.env.LINE_CHANNEL_ACCESS_TOKEN ?? null
+}
+
+export async function verifyLineWebhookSignature(rawBody: string, signature: string | null) {
+  const token = await getLineChannelAccessToken()
+  if (!token || !signature) return false
+  const expected = createHmac('sha256', token).update(rawBody).digest('base64')
+  const actual = Buffer.from(signature)
+  const expectedBuffer = Buffer.from(expected)
+  return actual.length === expectedBuffer.length && timingSafeEqual(actual, expectedBuffer)
+}
+
+export async function discoverLineGroup(groupId: string) {
+  const groups = await db.lineRecipientGroup.findMany({ select: { id: true, recipientIdEncrypted: true } })
+  if (groups.some((group: { recipientIdEncrypted: string }) => decrypt(group.recipientIdEncrypted) === groupId)) return false
+  await db.lineRecipientGroup.create({ data: { name: `กลุ่มที่ค้นพบ ${maskRecipientId(groupId)}`, recipientIdEncrypted: encrypt(groupId) } })
+  return true
+}
+
+export async function getLineGroups(): Promise<LineGroupSummary[]> {
+  const [config, groups] = await Promise.all([getStoredConfig(), db.lineRecipientGroup.findMany({ orderBy: { name: 'asc' } })])
+  return groups.map((group: { id: string; name: string; recipientIdEncrypted: string; active: boolean }) => ({ id: group.id, name: group.name, recipientIdMasked: maskRecipientId(decrypt(group.recipientIdEncrypted)), active: group.active, selected: config?.selectedGroupId === group.id }))
+}
+
+export async function addLineGroup(name: string, recipientId: string) {
+  const groups = await db.lineRecipientGroup.findMany({ select: { id: true, recipientIdEncrypted: true } })
+  if (groups.some((group: { recipientIdEncrypted: string }) => decrypt(group.recipientIdEncrypted) === recipientId)) throw new Error('This LINE group is already listed.')
+  return db.lineRecipientGroup.create({ data: { name, recipientIdEncrypted: encrypt(recipientId) } })
+}
+
+export async function selectLineGroup(groupId: string) {
+  const group = await db.lineRecipientGroup.findFirst({ where: { id: groupId, active: true }, select: { id: true } })
+  if (!group) throw new Error('Selected LINE group was not found.')
+  await db.lineIntegrationConfig.upsert({ where: { id: CONFIG_ID }, create: { id: CONFIG_ID, selectedGroupId: group.id }, update: { selectedGroupId: group.id } })
+}
+
+export async function deleteLineGroup(groupId: string) {
+  const config = await getStoredConfig()
+  if (config?.selectedGroupId === groupId) await db.lineIntegrationConfig.update({ where: { id: CONFIG_ID }, data: { selectedGroupId: null } })
+  await db.lineRecipientGroup.delete({ where: { id: groupId } })
+}
+
 async function getStoredConfig() {
   return db.lineIntegrationConfig.findUnique({ where: { id: CONFIG_ID } })
 }
 
 export async function getLineDeliveryConfig(): Promise<LineDeliveryConfig | null> {
   const stored = await getStoredConfig()
+  const selectedGroup = stored?.selectedGroupId ? await db.lineRecipientGroup.findUnique({ where: { id: stored.selectedGroupId } }) : null
+  if (stored?.channelAccessTokenEncrypted && selectedGroup?.active) {
+    return { token: decrypt(stored.channelAccessTokenEncrypted), recipientId: decrypt(selectedGroup.recipientIdEncrypted) }
+  }
   if (stored?.channelAccessTokenEncrypted && stored.recipientIdEncrypted) {
     return { token: decrypt(stored.channelAccessTokenEncrypted), recipientId: decrypt(stored.recipientIdEncrypted) }
   }

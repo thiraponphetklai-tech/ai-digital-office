@@ -287,8 +287,20 @@ model LineIntegrationConfig {
   id                          String   @id @default("default")
   channelAccessTokenEncrypted String?
   recipientIdEncrypted        String?
+  selectedGroupId             String?
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
+}
+
+model LineRecipientGroup {
+  id                   String   @id @default(cuid())
+  name                 String
+  recipientIdEncrypted String
+  active               Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([active, name])
 }
 
 model AiProjectDraftAudit {
